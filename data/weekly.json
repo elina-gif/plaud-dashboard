@@ -1,0 +1,31 @@
+"use client";
+
+import { readFileSync, existsSync } from "fs";
+import path from "path";
+import Dashboard from "@/components/Dashboard";
+
+function loadSnapshot() {
+  const filePath = path.join(process.cwd(), "data", "weekly.json");
+  if (!existsSync(filePath)) return null;
+  try {
+    return JSON.parse(readFileSync(filePath, "utf-8"));
+  } catch {
+    return null;
+  }
+}
+
+export default function Home() {
+  const snapshot = loadSnapshot();
+
+  return (
+    <main>
+      <Dashboard
+        initialInsights={snapshot?.insights ?? null}
+        initialCoverage={snapshot?.coverage ?? null}
+        initialMetrics={snapshot?.metrics ?? null}
+        generatedAt={snapshot?.generatedAt ?? null}
+        weekNumber={snapshot?.weekNumber ?? null}
+      />
+    </main>
+  );
+}
