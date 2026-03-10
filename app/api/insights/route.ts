@@ -39,11 +39,18 @@ Return ONLY raw JSON (no markdown, no code fences) with these exact keys:
       }),
     });
 
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("Anthropic error:", res.status, errText);
+      return NextResponse.json({ error: `Anthropic error: ${res.status}` }, { status: 500 });
+    }
+
     const data = await res.json();
     const raw = data.content?.find((b: any) => b.type === "text")?.text || "{}";
     const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
     return NextResponse.json(parsed);
-  } catch (e) {
-    return NextResponse.json({ error: "Failed to generate insights" }, { status: 500 });
+  } catch (e: any) {
+    console.error("Route error:", e);
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
