@@ -6,6 +6,9 @@ export async function POST() {
     return NextResponse.json({ error: "Missing API key" }, { status: 500 });
   }
 
+  // 公司内部代理地址
+  const BASE_URL = "http://34.216.169.232:30001/vertex";
+
   const prompt = `Analyze Plaud AI's PR performance this week.
 
 BRAND CONTEXT:
@@ -24,7 +27,7 @@ Return ONLY raw JSON (no markdown, no code fences) with these exact keys:
 - opportunity: string (1 sentence)`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch(`${BASE_URL}/v1/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
