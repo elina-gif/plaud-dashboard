@@ -27,6 +27,9 @@ const statusColors: Record<string, string> = {
   Ideation: "#94a3b8", High: "#f43f5e", Medium: "#f59e0b",
 };
 
+// 折线颜色：最多支持 6 个关键词
+const TREND_COLORS = ["#6366f1","#22d3ee","#f59e0b","#10b981","#f43f5e","#a78bfa"];
+
 interface DashboardProps {
   initialInsights: any;
   initialCoverage: any[];
@@ -115,7 +118,6 @@ const MetricTile = ({ label, value, trend, sub, highlight }: { label: string; va
 function parseMeltwaterCSV(text: string): any[] {
   const lines = text.split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
   if (lines.length < 2) return [];
-  // 自动检测分隔符（tab 或逗号）
   const sep = lines[0].split("\t").length > 5 ? "\t" : ",";
   const headers = lines[0].split(sep).map(h => h.replace(/"/g, "").trim());
   const rows: any[] = [];
@@ -123,8 +125,7 @@ function parseMeltwaterCSV(text: string): any[] {
   while (i < lines.length) {
     let line = lines[i];
     while (line.split(sep).length < headers.length && i + 1 < lines.length) {
-      i++;
-      line = line + " " + lines[i].trim();
+      i++; line = line + " " + lines[i].trim();
     }
     const vals = line.split(sep).map(v => v.replace(/^"|"$/g, "").trim());
     const obj: any = {};
@@ -166,8 +167,7 @@ function parseGA4CSV(text: string): any[] {
   while (i < lines.length) {
     let line = lines[i];
     while (line.split(",").length < headers.length && i + 1 < lines.length) {
-      i++;
-      line = line + " " + lines[i].trim();
+      i++; line = line + " " + lines[i].trim();
     }
     const vals = line.split(",").map(v => v.replace(/"/g, "").trim());
     const obj: any = {};
@@ -176,6 +176,33 @@ function parseGA4CSV(text: string): any[] {
     i++;
   }
   return rows;
+}
+
+// ─── Google Trends CSV 解析 ──────────────────────────────────
+// 格式：前几行是注释/空行，然后 "Day,KEYWORD1: (Worldwide),KEYWORD2: (Worldwide),..."
+// 值是 0-100 的搜索热度指数
+function parseGoogleTrendsCSV(text: string): { chartData: any[]; keywords: string[] } {
+  const lines = text.split("\n").map(l => l.trim()).filter(l => l);
+  // 找到以 "Day" 或 "Week" 开头的 header 行
+  const headerIdx = lines.findIndex(l => l.startsWith("Day") || l.startsWith("Week") || l.startsWith("Month"));
+  if (headerIdx === -1) return { chartData: [], keywords: [] };
+
+  const headers = lines[headerIdx].split(",").map(h => h.replace(/"/g, "").trim());
+  // 第一列是日期，其余是关键词（去掉 ": (Worldwide)" 等后缀）
+  const keywords = headers.slice(1).map(h => h.replace(/:\s*\(.*?\)/g, "").trim());
+
+  const chartData: any[] = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const vals = lines[i].split(",").map(v => v.replace(/"/g, "").trim());
+    if (!vals[0]) continue;
+    const point: any = { date: vals[0] };
+    keywords.forEach((kw, idx) => {
+      const raw = vals[idx + 1] || "0";
+      point[kw] = raw === "<1" ? 0.5 : (parseInt(raw) || 0);
+    });
+    chartData.push(point);
+  }
+  return { chartData, keywords };
 }
 
 // ─── Narrative Ownership ─────────────────────────────────────
@@ -382,7 +409,6 @@ function PulseModule({ metrics, mwData, mwDate }: { metrics: any; mwData: any[];
   const neg   = mwData.filter(r => (r.sentiment||"").includes("neg")).length;
   const sentScore = mwData.length > 0 ? ((pos*10 + (mwData.length-pos-neg)*5) / (mwData.length*10) * 10).toFixed(1) : null;
   const hasReal = mwData.length > 0;
-
   return (
     <div style={{ display:"grid", gap:16 }}>
       {hasReal && (
@@ -699,7 +725,7 @@ function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initia
   );
 }
 
-// ─── Tier 1 Coverage（Meltwater CSV 上传 + 展示）────────────
+// ─── Tier 1 Coverage ────────────────────────────────────────
 function Tier1Module({ onMeltwaterLoad, mwRows, uploadedAt }: {
   onMeltwaterLoad: (rows: any[], date: string) => void;
   mwRows: any[];
@@ -726,27 +752,21 @@ function Tier1Module({ onMeltwaterLoad, mwRows, uploadedAt }: {
     Array.from(e.dataTransfer.files).forEach(handleFile);
   };
 
-  // Filter Reach > 1M
-  const tier1Rows = mwRows.filter(r => (r.reach||0) >= 1000000);
+  const tier1Rows  = mwRows.filter(r => (r.reach||0) >= 1000000);
   const sentFilters = ["All","Positive","Neutral","Negative"];
-  const filtered = filter==="All" ? tier1Rows : tier1Rows.filter(r => (r.sentiment||"").toLowerCase().includes(filter.toLowerCase()));
-
-  // Summary stats
-  const pos  = tier1Rows.filter(r => (r.sentiment||"").toLowerCase().includes("pos")).length;
-  const neg  = tier1Rows.filter(r => (r.sentiment||"").toLowerCase().includes("neg")).length;
-  const neu  = tier1Rows.length - pos - neg;
+  const filtered   = filter==="All" ? tier1Rows : tier1Rows.filter(r => (r.sentiment||"").toLowerCase().includes(filter.toLowerCase()));
+  const pos = tier1Rows.filter(r => (r.sentiment||"").toLowerCase().includes("pos")).length;
+  const neg = tier1Rows.filter(r => (r.sentiment||"").toLowerCase().includes("neg")).length;
+  const neu = tier1Rows.length - pos - neg;
 
   return (
     <div style={{ display:"grid", gap:16 }}>
-      {/* Upload */}
       <Card>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
           <div>
             <div style={{ color:TEXT, fontWeight:700, fontSize:13, textTransform:"uppercase", letterSpacing:"0.05em" }}>Tier 1 Coverage — Meltwater Upload</div>
             <div style={{ color:MUTED, fontSize:11, marginTop:2 }}>
-              {uploadedAt
-                ? `Last uploaded: ${uploadedAt} · ${tier1Rows.length} articles with Reach >1M`
-                : "Upload Meltwater CSV — Plaud mentions with Reach >1M will be shown"}
+              {uploadedAt ? `Last uploaded: ${uploadedAt} · ${tier1Rows.length} articles with Reach >1M` : "Upload Meltwater CSV — Plaud mentions with Reach >1M will be shown"}
             </div>
           </div>
           {tier1Rows.length>0 && (
@@ -776,8 +796,6 @@ function Tier1Module({ onMeltwaterLoad, mwRows, uploadedAt }: {
           <input id="mw-tier1-input" type="file" accept=".csv" style={{ display:"none" }} onChange={e=>Array.from(e.target.files||[]).forEach(handleFile)} />
         </div>
       </Card>
-
-      {/* No data state */}
       {tier1Rows.length===0 && (
         <Card>
           <div style={{ textAlign:"center", padding:"32px 0", color:MUTED }}>
@@ -787,19 +805,14 @@ function Tier1Module({ onMeltwaterLoad, mwRows, uploadedAt }: {
           </div>
         </Card>
       )}
-
-      {/* Articles */}
       {tier1Rows.length>0 && (
         <>
-          {/* Summary tiles */}
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
-            <MetricTile label="Tier 1 Articles"   value={String(tier1Rows.length)}  sub="Reach >1M" />
-            <MetricTile label="Positive"          value={String(pos)}               trend="up" sub={`${Math.round((pos/tier1Rows.length)*100)}% of total`} />
-            <MetricTile label="Negative"          value={String(neg)}               trend="down" sub={`${Math.round((neg/tier1Rows.length)*100)}% of total`} />
-            <MetricTile label="Total Mentions"    value={String(mwRows.length)}     sub="All reach levels" />
+            <MetricTile label="Tier 1 Articles" value={String(tier1Rows.length)} sub="Reach >1M" />
+            <MetricTile label="Positive"        value={String(pos)} trend="up"   sub={`${Math.round((pos/tier1Rows.length)*100)}% of total`} />
+            <MetricTile label="Negative"        value={String(neg)} trend="down" sub={`${Math.round((neg/tier1Rows.length)*100)}% of total`} />
+            <MetricTile label="Total Mentions"  value={String(mwRows.length)}    sub="All reach levels" />
           </div>
-
-          {/* Filter + Article list */}
           <Card>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
               <CardTitle sub={`Showing ${filtered.length} articles · Reach >1M · from Meltwater`}>Coverage Log</CardTitle>
@@ -848,13 +861,18 @@ function Tier1Module({ onMeltwaterLoad, mwRows, uploadedAt }: {
 }
 
 // ─── Brand Awareness ─────────────────────────────────────────
-function BrandAwarenessModule({ keywordData, pageData, uploadedAt, onLoad }: {
+function BrandAwarenessModule({ keywordData, pageData, uploadedAt, onLoad, trendsData, trendsKeywords, trendsUploadedAt, onTrendsLoad }: {
   keywordData: any[];
   pageData: any[];
   uploadedAt: string | null;
   onLoad: (keywords: any[], pages: any[], date: string) => void;
+  trendsData: any[];
+  trendsKeywords: string[];
+  trendsUploadedAt: string | null;
+  onTrendsLoad: (data: any[], keywords: string[], date: string) => void;
 }) {
-  const [dragging, setDragging] = useState(false);
+  const [dragging,        setDragging]        = useState(false);
+  const [draggingTrends,  setDraggingTrends]  = useState(false);
 
   const normalizeRow = (row: any): any => {
     const out: any = {};
@@ -891,8 +909,24 @@ function BrandAwarenessModule({ keywordData, pageData, uploadedAt, onLoad }: {
     reader.readAsText(file);
   };
 
-  const onDrop = (e: React.DragEvent) => { e.preventDefault(); setDragging(false); Array.from(e.dataTransfer.files).forEach(handleFile); };
-  const hasData = keywordData.length>0||pageData.length>0;
+  const handleTrendsFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target?.result as string;
+      const { chartData, keywords } = parseGoogleTrendsCSV(text);
+      if (!chartData.length) return;
+      const date = new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+      onTrendsLoad(chartData, keywords, date);
+    };
+    reader.readAsText(file);
+  };
+
+  const onDrop        = (e: React.DragEvent) => { e.preventDefault(); setDragging(false);       Array.from(e.dataTransfer.files).forEach(handleFile); };
+  const onDropTrends  = (e: React.DragEvent) => { e.preventDefault(); setDraggingTrends(false); Array.from(e.dataTransfer.files).forEach(handleTrendsFile); };
+
+  const hasData   = keywordData.length>0||pageData.length>0;
+  const hasTrends = trendsData.length>0;
+
   const brandKws    = keywordData.filter(r=>{ const q=(r.Query||"").toLowerCase(); return q.includes("plaud")||q.includes("notepin"); });
   const nonBrandKws = keywordData.filter(r=>{ const q=(r.Query||"").toLowerCase(); return !q.includes("plaud")&&!q.includes("notepin"); });
   const totalBrandClicks      = brandKws.reduce((s,r)=>s+(parseInt(r.Clicks||"0")||0),0);
@@ -900,8 +934,13 @@ function BrandAwarenessModule({ keywordData, pageData, uploadedAt, onLoad }: {
   const keywordChart = keywordData.slice(0,10).map(r=>({ name:(r.Query||"").length>22?(r.Query||"").slice(0,20)+"…":(r.Query||""), clicks:parseInt(r.Clicks||"0")||0, isBrand:(r.Query||"").toLowerCase().includes("plaud")||(r.Query||"").toLowerCase().includes("notepin") }));
   const pageChart    = pageData.slice(0,8).map(r=>({ name:((r["Page path and screen class"]||r.Page||r.page||"/").replace("https://www.plaud.ai","").slice(0,25))||"/", views:parseInt(r.Views||r.views||"0")||0, users:parseInt(r.Users||r.users||"0")||0 }));
 
+  // 只显示每隔 N 个日期标签，避免过于密集
+  const trendsTickInterval = Math.max(1, Math.floor(trendsData.length / 12));
+
   return (
     <div style={{ display:"grid", gap:16 }}>
+
+      {/* ── GA4 上传卡片 ── */}
       <Card>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
           <div>
@@ -941,7 +980,105 @@ function BrandAwarenessModule({ keywordData, pageData, uploadedAt, onLoad }: {
           </div>
         </div>
       </Card>
-      {!hasData && <Card><div style={{ textAlign:"center", padding:"32px 0", color:MUTED }}><div style={{ fontSize:36, marginBottom:12 }}>📊</div><div style={{ fontSize:13, fontWeight:600, marginBottom:6, color:TEXT }}>No data uploaded yet</div><div style={{ fontSize:12 }}>Follow the export guide above and drag your CSV files into the upload area.</div></div></Card>}
+
+      {/* ── Google Trends 上传卡片 ── */}
+      <Card>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+          <div>
+            <div style={{ color:TEXT, fontWeight:700, fontSize:13, textTransform:"uppercase", letterSpacing:"0.05em" }}>Google Trends — Search Interest Over Time</div>
+            <div style={{ color:MUTED, fontSize:11, marginTop:2 }}>
+              {trendsUploadedAt ? `Last uploaded: ${trendsUploadedAt} · ${trendsKeywords.length} keywords · ${trendsData.length} data points` : "Upload Google Trends CSV export to compare search interest"}
+            </div>
+          </div>
+          {hasTrends && (
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" as const }}>
+              {trendsKeywords.map((kw, i) => (
+                <span key={kw} style={{ background:TREND_COLORS[i%TREND_COLORS.length]+"22", border:`1px solid ${TREND_COLORS[i%TREND_COLORS.length]}44`, borderRadius:6, padding:"3px 10px", color:TREND_COLORS[i%TREND_COLORS.length], fontSize:11, fontWeight:700 }}>{kw}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ marginBottom:14, padding:"10px 14px", background:"#13151f", border:`1px solid ${BORDER}`, borderRadius:8, fontSize:11, color:MUTED, lineHeight:1.8 }}>
+          <div style={{ color:TEXT, fontWeight:600, marginBottom:6 }}>How to export from Google Trends:</div>
+          <div>1. Go to <span style={{color:CYAN}}>trends.google.com</span> → Search "Plaud" (+ add competitors to compare)</div>
+          <div>2. Set date range → Click the <span style={{color:ACCENT}}>↓ download</span> button (top right of the chart)</div>
+          <div>3. Upload the downloaded <strong style={{color:CYAN}}>multiTimeline.csv</strong> below</div>
+        </div>
+        <div
+          onDragOver={e=>{e.preventDefault();setDraggingTrends(true);}}
+          onDragLeave={()=>setDraggingTrends(false)}
+          onDrop={onDropTrends}
+          onClick={()=>document.getElementById("trends-input")?.click()}
+          style={{ border:`2px dashed ${draggingTrends?"#10b981":BORDER}`, borderRadius:10, padding:"24px 20px", textAlign:"center", background:draggingTrends?"#10b98111":"#13151f", transition:"all 0.15s", cursor:"pointer" }}
+        >
+          <div style={{ fontSize:28, marginBottom:8 }}>📈</div>
+          <div style={{ color:TEXT, fontSize:13, fontWeight:600, marginBottom:4 }}>Drop Google Trends CSV here or click to upload</div>
+          <div style={{ color:MUTED, fontSize:11 }}>Supports <strong style={{color:CYAN}}>multiTimeline.csv</strong> from Google Trends</div>
+          <input id="trends-input" type="file" accept=".csv" style={{ display:"none" }} onChange={e=>{ if(e.target.files?.[0]) handleTrendsFile(e.target.files[0]); }} />
+        </div>
+      </Card>
+
+      {/* ── Google Trends 折线图 ── */}
+      {hasTrends && (
+        <Card>
+          <CardTitle sub={`Search interest index (0–100) · ${trendsData[0]?.date} → ${trendsData[trendsData.length-1]?.date}`}>
+            Google Trends: Search Interest Comparison
+          </CardTitle>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={trendsData}>
+              <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+              <XAxis
+                dataKey="date"
+                stroke={MUTED}
+                fontSize={10}
+                interval={trendsTickInterval}
+                angle={-20}
+                textAnchor="end"
+                height={40}
+              />
+              <YAxis stroke={MUTED} fontSize={10} domain={[0,100]} tickFormatter={v=>`${v}`} />
+              <Tooltip
+                contentStyle={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:8, fontSize:11 }}
+                formatter={(val:any, name:any) => [`${val}`, name]}
+              />
+              <Legend wrapperStyle={{ fontSize:11, paddingTop:8 }} />
+              {trendsKeywords.map((kw, i) => (
+                <Line
+                  key={kw}
+                  type="monotone"
+                  dataKey={kw}
+                  stroke={TREND_COLORS[i % TREND_COLORS.length]}
+                  strokeWidth={kw.toLowerCase().includes("plaud") ? 2.5 : 1.5}
+                  dot={false}
+                  name={kw}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+          {/* Peak 数据摘要 */}
+          <div style={{ display:"grid", gridTemplateColumns:`repeat(${Math.min(trendsKeywords.length,3)},1fr)`, gap:10, marginTop:14 }}>
+            {trendsKeywords.map((kw, i) => {
+              const vals = trendsData.map(d => d[kw] as number).filter(v => v !== undefined);
+              const peak = Math.max(...vals);
+              const avg  = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+              const latest = vals[vals.length-1] ?? 0;
+              return (
+                <div key={kw} style={{ background:"#13151f", border:`1px solid ${TREND_COLORS[i%TREND_COLORS.length]}33`, borderRadius:8, padding:"10px 12px" }}>
+                  <div style={{ color:TREND_COLORS[i%TREND_COLORS.length], fontSize:11, fontWeight:700, marginBottom:6 }}>{kw}</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:4 }}>
+                    <div><div style={{ color:MUTED, fontSize:9, textTransform:"uppercase" }}>Peak</div><div style={{ color:TEXT, fontSize:14, fontWeight:700 }}>{peak}</div></div>
+                    <div><div style={{ color:MUTED, fontSize:9, textTransform:"uppercase" }}>Avg</div><div style={{ color:TEXT, fontSize:14, fontWeight:700 }}>{avg}</div></div>
+                    <div><div style={{ color:MUTED, fontSize:9, textTransform:"uppercase" }}>Latest</div><div style={{ color:TEXT, fontSize:14, fontWeight:700 }}>{latest}</div></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* ── GA4 数据展示 ── */}
+      {!hasData && <Card><div style={{ textAlign:"center", padding:"32px 0", color:MUTED }}><div style={{ fontSize:36, marginBottom:12 }}>📊</div><div style={{ fontSize:13, fontWeight:600, marginBottom:6, color:TEXT }}>No GA4 data uploaded yet</div><div style={{ fontSize:12 }}>Follow the export guide above and drag your CSV files into the upload area.</div></div></Card>}
       {hasData && (
         <>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
@@ -1026,18 +1163,27 @@ export default function Dashboard({ initialInsights, initialCoverage, initialMet
   const [tab, setTab] = useState(0);
   const tabs = ["📊 Pulse","🧭 Narrative","⚔️ Competitive","🎯 Action","🧠 AI Insights","📰 Tier 1 Coverage","📈 Brand Awareness"];
 
-  // Shared Meltwater state— uploaded once in Tier 1, used in Pulse
-const [mwData, setMwData] = useState<any[]>([]);
-const [mwDate, setMwDate] = useState<string|null>(null);
-const handleMwLoad = (rows: any[], date: string) => { setMwData(rows); setMwDate(date); };
+  // Shared Meltwater state
+  const [mwData, setMwData] = useState<any[]>([]);
+  const [mwDate, setMwDate] = useState<string|null>(null);
+  const handleMwLoad = (rows: any[], date: string) => { setMwData(rows); setMwDate(date); };
 
-// Shared GA4 state
-const [keywordData, setKeywordData] = useState<any[]>([]);
-const [pageData,    setPageData]    = useState<any[]>([]);
-const [ga4Date,     setGa4Date]     = useState<string|null>(null);
-const handleGA4Load = (keywords: any[], pages: any[], date: string) => {
-  setKeywordData(keywords); setPageData(pages); setGa4Date(date);
-};
+  // Shared GA4 state
+  const [keywordData, setKeywordData] = useState<any[]>([]);
+  const [pageData,    setPageData]    = useState<any[]>([]);
+  const [ga4Date,     setGa4Date]     = useState<string|null>(null);
+  const handleGA4Load = (keywords: any[], pages: any[], date: string) => {
+    setKeywordData(keywords); setPageData(pages); setGa4Date(date);
+  };
+
+  // Shared Google Trends state
+  const [trendsData,       setTrendsData]       = useState<any[]>([]);
+  const [trendsKeywords,   setTrendsKeywords]   = useState<string[]>([]);
+  const [trendsUploadedAt, setTrendsUploadedAt] = useState<string|null>(null);
+  const handleTrendsLoad = (data: any[], keywords: string[], date: string) => {
+    setTrendsData(data); setTrendsKeywords(keywords); setTrendsUploadedAt(date);
+  };
+
   return (
     <div style={{ background:DARK, minHeight:"100vh", fontFamily:"'Inter',-apple-system,sans-serif", color:TEXT }}>
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
@@ -1059,13 +1205,24 @@ const handleGA4Load = (keywords: any[], pages: any[], date: string) => {
         ))}
       </div>
       <div style={{ padding:24, maxWidth:1200, margin:"0 auto" }}>
-        {tab===0 && <PulseModule    metrics={initialMetrics} mwData={mwData} mwDate={mwDate} />}
+        {tab===0 && <PulseModule metrics={initialMetrics} mwData={mwData} mwDate={mwDate} />}
         {tab===1 && <NarrativeModule />}
         {tab===2 && <CompetitiveModule />}
         {tab===3 && <ActionModule coverage={initialCoverage||[]} />}
         {tab===4 && <AIInsightsModule initialInsights={initialInsights} generatedAt={generatedAt} weekNumber={weekNumber} />}
         {tab===5 && <Tier1Module onMeltwaterLoad={handleMwLoad} mwRows={mwData} uploadedAt={mwDate} />}
-        {tab===6 && <BrandAwarenessModule keywordData={keywordData} pageData={pageData} uploadedAt={ga4Date} onLoad={handleGA4Load} />}
+        {tab===6 && (
+          <BrandAwarenessModule
+            keywordData={keywordData}
+            pageData={pageData}
+            uploadedAt={ga4Date}
+            onLoad={handleGA4Load}
+            trendsData={trendsData}
+            trendsKeywords={trendsKeywords}
+            trendsUploadedAt={trendsUploadedAt}
+            onTrendsLoad={handleTrendsLoad}
+          />
+        )}
       </div>
     </div>
   );
