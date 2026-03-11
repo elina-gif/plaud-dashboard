@@ -587,7 +587,11 @@ function NarrativeModule() {
                     <div style={{ color:TEXT, fontSize:12, fontWeight:600, lineHeight:1.3, flex:1, marginRight:8 }}>{r.title}</div>
                     <span style={{ background:(categoryColors[r.category]||MUTED)+"22", color:categoryColors[r.category]||MUTED, borderRadius:4, padding:"2px 6px", fontSize:9, fontWeight:700, whiteSpace:"nowrap" }}>{r.category}</span>
                   </div>
-                  <div style={{ color:MUTED, fontSize:10, marginBottom:6 }}>{r.source} · {r.date}</div>
+                  <div style={{ color:MUTED, fontSize:10, marginBottom:6 }}>
+  {r.url ? (
+    <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color:CYAN, textDecoration:"none" }}>{r.source}</a>
+  ) : r.source} · {r.date}
+</div>
                   <div style={{ color:TEXT, fontSize:11, lineHeight:1.5, marginBottom:6 }}>{r.keyFinding}</div>
                   <div style={{ color:CYAN, fontSize:10, borderTop:`1px solid ${BORDER}`, paddingTop:6 }}>→ {r.relevanceToPlaud}</div>
                 </div>
@@ -647,7 +651,11 @@ function NarrativeModule() {
                     </span>
                   </div>
                   <div style={{ color:CYAN, fontSize:11, fontStyle:"italic", marginBottom:6, lineHeight:1.5 }}>"{l.quote}"</div>
-                  <div style={{ color:MUTED, fontSize:10, marginBottom:6 }}>{l.source} · {l.date}</div>
+                  <div style={{ color:MUTED, fontSize:10, marginBottom:6 }}>
+  {l.url ? (
+    <a href={l.url} target="_blank" rel="noopener noreferrer" style={{ color:CYAN, textDecoration:"none" }}>{l.source}</a>
+  ) : l.source} · {l.date}
+</div>
                   <div style={{ color:"#10b981", fontSize:10, borderTop:`1px solid ${BORDER}`, paddingTop:6 }}>→ {l.relevanceToPlaud}</div>
                 </div>
               ))}
