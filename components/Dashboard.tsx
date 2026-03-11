@@ -7,7 +7,6 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 
-// ─── 颜色常量 ────────────────────────────────────────────────
 const DARK   = "#0f1117";
 const CARD   = "#1a1d27";
 const BORDER = "#2a2d3a";
@@ -27,7 +26,6 @@ const statusColors: Record<string, string> = {
   Ideation: "#94a3b8", High: "#f43f5e", Medium: "#f59e0b",
 };
 
-// ─── Props ───────────────────────────────────────────────────
 interface DashboardProps {
   initialInsights: any;
   initialCoverage: any[];
@@ -36,7 +34,6 @@ interface DashboardProps {
   weekNumber:      number | null;
 }
 
-// ─── 静态数据 ────────────────────────────────────────────────
 const weeklyData = [
   { week: "W1", plaud: 12, otter: 18, notion: 22, remarkable: 8  },
   { week: "W2", plaud: 19, otter: 20, notion: 19, remarkable: 10 },
@@ -51,11 +48,11 @@ const sentimentData = [
   { name: "Negative", value: 15, color: "#f43f5e" },
 ];
 const defaultNarrativeData = [
-  { narrative: "AI Work Companion",        current: 38, target: 70 },
-  { narrative: "AI Note Taker",            current: 62, target: 40 },
-  { narrative: "Conv. Intelligence",       current: 29, target: 65 },
-  { narrative: "AI Productivity Tool",     current: 44, target: 50 },
-  { narrative: "Capture→Extract→Utilize",  current: 18, target: 60 },
+  { narrative: "AI Work Companion",       current: 38, target: 70 },
+  { narrative: "AI Note Taker",           current: 62, target: 40 },
+  { narrative: "Conv. Intelligence",      current: 29, target: 65 },
+  { narrative: "AI Productivity Tool",    current: 44, target: 50 },
+  { narrative: "Capture→Extract→Utilize", current: 18, target: 60 },
 ];
 const defaultTopics = [
   { topic: "AI Agents at Work",        relevance: 95, plaudIn: true,  evidence: "NotePin S launch article on TechCrunch" },
@@ -122,16 +119,16 @@ const outletRows = [
   { outlet: "Engadget",    traffic: "5M+"  },
 ];
 const defaultCoverage = [
-  { co: "Plaud",      outlet: "TechCrunch", traffic: "10M+", date: "Dec 29, 2025", title: "Plaud Note Pro is an excellent AI-powered recorder that I carry everywhere", type: "Review",   sentiment: "Positive", journalist: "Ivan Mehta"      },
-  { co: "Plaud",      outlet: "TechCrunch", traffic: "10M+", date: "Jan 4, 2026",  title: "Plaud launches a new AI pin and a desktop meeting notetaker",                type: "News",     sentiment: "Positive", journalist: "Ivan Mehta"      },
-  { co: "Plaud",      outlet: "The Verge",  traffic: "15M+", date: "Jan 4, 2026",  title: "Plaud NotePin S debuts at CES 2026 with new highlight button",               type: "News",     sentiment: "Positive", journalist: "Dominic Preston" },
-  { co: "Plaud",      outlet: "Forbes",     traffic: "70M+", date: "Jan 4, 2026",  title: "New Plaud NotePin S Desktop Software Takes Notes At Meetings",               type: "News",     sentiment: "Positive", journalist: "Mark Sparrow"    },
-  { co: "Plaud",      outlet: "CNET",       traffic: "30M+", date: "Jan 4, 2026",  title: "My CES 2026 Secret Weapon? This New Wearable AI Note-Taking Pin From Plaud", type: "Review",   sentiment: "Positive", journalist: "Katie Collins"   },
-  { co: "Plaud",      outlet: "ZDNET",      traffic: "8M+",  date: "Jan 4, 2026",  title: "Plaud has unveiled a new AI wearable — I'm considering replacing Otter.ai",  type: "Review",   sentiment: "Positive", journalist: "Sabrina Ortiz"   },
-  { co: "Otter.ai",   outlet: "Bloomberg",  traffic: "50M+", date: "Dec 2025",     title: "Otter.ai AI Avatar Technology Transforms Executive Productivity",             type: "Feature",  sentiment: "Positive", journalist: "Staff"           },
-  { co: "Otter.ai",   outlet: "CNBC",       traffic: "40M+", date: "Dec 2025",     title: "Otter.ai CEO on $100M ARR and new AI Meeting Agents",                        type: "Interview",sentiment: "Positive", journalist: "Jim Cramer"      },
-  { co: "Notion AI",  outlet: "The Verge",  traffic: "15M+", date: "Feb 2026",     title: "Notion Custom Agents Could Be the Future of Knowledge Work",                 type: "Review",   sentiment: "Positive", journalist: "Staff"           },
-  { co: "reMarkable", outlet: "The Verge",  traffic: "15M+", date: "Jan 2026",     title: "reMarkable Paper Pro review: the best digital paper tablet",                 type: "Review",   sentiment: "Positive", journalist: "Staff"           },
+  { co: "Plaud",      outlet: "TechCrunch", traffic: "10M+", date: "Dec 29, 2025", title: "Plaud Note Pro is an excellent AI-powered recorder that I carry everywhere", type: "Review",    sentiment: "Positive", journalist: "Ivan Mehta"      },
+  { co: "Plaud",      outlet: "TechCrunch", traffic: "10M+", date: "Jan 4, 2026",  title: "Plaud launches a new AI pin and a desktop meeting notetaker",                type: "News",      sentiment: "Positive", journalist: "Ivan Mehta"      },
+  { co: "Plaud",      outlet: "The Verge",  traffic: "15M+", date: "Jan 4, 2026",  title: "Plaud NotePin S debuts at CES 2026 with new highlight button",               type: "News",      sentiment: "Positive", journalist: "Dominic Preston" },
+  { co: "Plaud",      outlet: "Forbes",     traffic: "70M+", date: "Jan 4, 2026",  title: "New Plaud NotePin S Desktop Software Takes Notes At Meetings",               type: "News",      sentiment: "Positive", journalist: "Mark Sparrow"    },
+  { co: "Plaud",      outlet: "CNET",       traffic: "30M+", date: "Jan 4, 2026",  title: "My CES 2026 Secret Weapon? This New Wearable AI Note-Taking Pin From Plaud", type: "Review",    sentiment: "Positive", journalist: "Katie Collins"   },
+  { co: "Plaud",      outlet: "ZDNET",      traffic: "8M+",  date: "Jan 4, 2026",  title: "Plaud has unveiled a new AI wearable — I'm considering replacing Otter.ai",  type: "Review",    sentiment: "Positive", journalist: "Sabrina Ortiz"   },
+  { co: "Otter.ai",   outlet: "Bloomberg",  traffic: "50M+", date: "Dec 2025",     title: "Otter.ai AI Avatar Technology Transforms Executive Productivity",             type: "Feature",   sentiment: "Positive", journalist: "Staff"           },
+  { co: "Otter.ai",   outlet: "CNBC",       traffic: "40M+", date: "Dec 2025",     title: "Otter.ai CEO on $100M ARR and new AI Meeting Agents",                        type: "Interview", sentiment: "Positive", journalist: "Jim Cramer"      },
+  { co: "Notion AI",  outlet: "The Verge",  traffic: "15M+", date: "Feb 2026",     title: "Notion Custom Agents Could Be the Future of Knowledge Work",                 type: "Review",    sentiment: "Positive", journalist: "Staff"           },
+  { co: "reMarkable", outlet: "The Verge",  traffic: "15M+", date: "Jan 2026",     title: "reMarkable Paper Pro review: the best digital paper tablet",                 type: "Review",    sentiment: "Positive", journalist: "Staff"           },
 ];
 
 // ─── 小组件 ──────────────────────────────────────────────────
@@ -155,7 +152,35 @@ const MetricTile = ({ label, value, trend, sub }: { label: string; value: string
   </div>
 );
 
-// ─── 可编辑 Narrative Ownership 卡片 ────────────────────────
+// ─── CSV 解析（兼容 GA4 格式）────────────────────────────────
+function parseGA4CSV(text: string): any[] {
+  // 跳过 # 开头注释行和空行
+  const lines = text
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith("#"));
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, ""));
+  const rows: any[] = [];
+  let i = 1;
+  while (i < lines.length) {
+    let line = lines[i];
+    // GA4 有时数据行会被折行，列数不够就拼下一行
+    while (line.split(",").length < headers.length && i + 1 < lines.length) {
+      i++;
+      line = line + " " + lines[i].trim();
+    }
+    const vals = line.split(",").map(v => v.trim().replace(/"/g, ""));
+    const obj: any = {};
+    headers.forEach((h, idx) => { obj[h] = vals[idx] || ""; });
+    rows.push(obj);
+    i++;
+  }
+  return rows;
+}
+
+// ─── Narrative Ownership 可编辑卡片 ─────────────────────────
 function NarrativeOwnershipCard() {
   const [data, setData]       = useState(defaultNarrativeData);
   const [editing, setEditing] = useState<{ idx: number; field: "current"|"target" }|null>(null);
@@ -182,50 +207,38 @@ function NarrativeOwnershipCard() {
         <span style={{ background: ACCENT+"22", color: ACCENT, border: `1px solid ${ACCENT}44`, borderRadius: 6, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>{quarter}</span>
       </div>
       <div style={{ color: MUTED, fontSize: 11, marginBottom: 10 }}>Current vs target narrative penetration</div>
-
-      {/* 打分说明 */}
-              <div style={{ marginBottom: 16, padding: "8px 12px", background: "#13151f", border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 11, color: MUTED, lineHeight: 1.8 }}>
+      <div style={{ marginBottom: 16, padding: "8px 12px", background: "#13151f", border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 11, color: MUTED, lineHeight: 1.8 }}>
         <div><span style={{ color: ACCENT, fontWeight: 600 }}>Current %</span> = Media data (50%) + Team assessment (50%) — updated each quarter</div>
-        <div><span style={{ color: MUTED, fontWeight: 600 }}>Target %</span> &nbsp;= Brand team's quarterly goal, set and updated each quarter</div>
+        <div><span style={{ color: MUTED, fontWeight: 600 }}>Target %</span> &nbsp;= Brand team's quarterly goal, updated each quarter</div>
         <div style={{ marginTop: 4, color: "#f59e0b", fontSize: 10 }}>💡 Click any number to edit directly</div>
       </div>
-
-      {/* 每行数据 */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {data.map((row, idx) => (
           <div key={row.narrative}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
               <span style={{ color: TEXT, fontSize: 12, fontWeight: 600 }}>{row.narrative}</span>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                {/* Current % */}
                 {editing?.idx===idx && editing?.field==="current" ? (
                   <input autoFocus value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={commitEdit} onKeyDown={e=>e.key==="Enter"&&commitEdit()}
                     style={{ width: 48, background: BORDER, border: `1px solid ${ACCENT}`, borderRadius: 4, color: TEXT, fontSize: 12, fontWeight: 700, textAlign: "center", padding: "2px 4px", outline: "none" }} />
                 ) : (
-                  <span onClick={()=>startEdit(idx,"current",row.current)} title="点击编辑"
-                    style={{ color: ACCENT, fontSize: 12, fontWeight: 700, cursor: "pointer", borderBottom: `1px dashed ${ACCENT}55` }}>
-                    {row.current}%
-                  </span>
+                  <span onClick={()=>startEdit(idx,"current",row.current)} title="Click to edit"
+                    style={{ color: ACCENT, fontSize: 12, fontWeight: 700, cursor: "pointer", borderBottom: `1px dashed ${ACCENT}55` }}>{row.current}%</span>
                 )}
                 <span style={{ color: BORDER }}>/ target</span>
-                {/* Target % */}
                 {editing?.idx===idx && editing?.field==="target" ? (
                   <input autoFocus value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={commitEdit} onKeyDown={e=>e.key==="Enter"&&commitEdit()}
                     style={{ width: 48, background: BORDER, border: `1px solid ${MUTED}`, borderRadius: 4, color: TEXT, fontSize: 12, fontWeight: 700, textAlign: "center", padding: "2px 4px", outline: "none" }} />
                 ) : (
-                  <span onClick={()=>startEdit(idx,"target",row.target)} title="点击编辑"
-                    style={{ color: MUTED, fontSize: 12, fontWeight: 700, cursor: "pointer", borderBottom: `1px dashed ${MUTED}55` }}>
-                    {row.target}%
-                  </span>
+                  <span onClick={()=>startEdit(idx,"target",row.target)} title="Click to edit"
+                    style={{ color: MUTED, fontSize: 12, fontWeight: 700, cursor: "pointer", borderBottom: `1px dashed ${MUTED}55` }}>{row.target}%</span>
                 )}
               </div>
             </div>
-            {/* 双层进度条 */}
             <div style={{ position: "relative", height: 8, background: BORDER, borderRadius: 4 }}>
               <div style={{ position: "absolute", left: 0, top: 0, width: `${row.target}%`, height: "100%", background: "#2a2d3a", borderRadius: 4 }} />
               <div style={{ position: "absolute", left: 0, top: 0, width: `${row.current}%`, height: "100%", background: row.current>=row.target?"#10b981":ACCENT, borderRadius: 4, transition: "width 0.3s" }} />
             </div>
-            {/* 达标提示 */}
             <div style={{ marginTop: 4, fontSize: 10, color: row.current>=row.target?"#10b981":"#f59e0b" }}>
               {row.current>=row.target ? `✓ On track (${row.current-row.target}% above target)` : `△ ${row.target-row.current}% below target`}
             </div>
@@ -236,7 +249,7 @@ function NarrativeOwnershipCard() {
   );
 }
 
-// ─── 模块：Pulse ─────────────────────────────────────────────
+// ─── Pulse ───────────────────────────────────────────────────
 function PulseModule({ metrics }: { metrics: any }) {
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -281,16 +294,13 @@ function PulseModule({ metrics }: { metrics: any }) {
   );
 }
 
-// ─── 模块：Narrative ─────────────────────────────────────────
+// ─── Narrative ───────────────────────────────────────────────
 function NarrativeModule() {
   const [topics, setTopics] = useState(defaultTopics);
-
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {/* 可编辑 Narrative Ownership */}
         <NarrativeOwnershipCard />
-
         <Card>
           <CardTitle sub="Media sentiment this week">Sentiment Breakdown</CardTitle>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -320,8 +330,6 @@ function NarrativeModule() {
           </div>
         </Card>
       </div>
-
-      {/* AI Industry Narrative Landscape — 可切换 IN/OUT */}
       <Card>
         <div style={{ marginBottom: 16 }}>
           <div style={{ color: TEXT, fontWeight: 700, fontSize: 13, letterSpacing: "0.05em", textTransform: "uppercase" }}>AI Industry Narrative Landscape</div>
@@ -341,14 +349,9 @@ function NarrativeModule() {
             <div key={t.topic} style={{ background: "#13151f", border: `1px solid ${t.plaudIn?ACCENT+"55":BORDER}`, borderRadius: 10, padding: "12px 14px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                 <span style={{ color: TEXT, fontSize: 12, fontWeight: 600, lineHeight: 1.3 }}>{t.topic}</span>
-                <button
-                  onClick={() => {
-                    const updated = [...topics];
-                    updated[idx] = { ...updated[idx], plaudIn: !updated[idx].plaudIn };
-                    setTopics(updated);
-                  }}
+                <button onClick={() => { const u=[...topics]; u[idx]={...u[idx],plaudIn:!u[idx].plaudIn}; setTopics(u); }}
                   style={{ color: t.plaudIn?"#10b981":"#f43f5e", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", marginLeft: 6, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                  {t.plaudIn ? "✓ IN" : "✗ OUT"}
+                  {t.plaudIn?"✓ IN":"✗ OUT"}
                 </button>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
@@ -358,16 +361,9 @@ function NarrativeModule() {
                 <span style={{ color: MUTED, fontSize: 10 }}>{t.relevance}</span>
               </div>
               {t.plaudIn ? (
-                <input
-                  placeholder="Add evidence, e.g. Forbes pitch on AI Work Companion"
-                  defaultValue={t.evidence}
-                  onBlur={e => {
-                    const updated = [...topics];
-                    updated[idx] = { ...updated[idx], evidence: e.target.value };
-                    setTopics(updated);
-                  }}
-                  style={{ width: "100%", background: BORDER, border: "none", borderRadius: 4, padding: "4px 6px", color: TEXT, fontSize: 10, outline: "none" }}
-                />
+                <input placeholder="Add evidence, e.g. Forbes pitch on AI Work Companion" defaultValue={t.evidence}
+                  onBlur={e => { const u=[...topics]; u[idx]={...u[idx],evidence:e.target.value}; setTopics(u); }}
+                  style={{ width: "100%", background: BORDER, border: "none", borderRadius: 4, padding: "4px 6px", color: TEXT, fontSize: 10, outline: "none" }} />
               ) : (
                 <div style={{ color: "#f59e0b", fontSize: 10 }}>⚡ Pitch opportunity</div>
               )}
@@ -379,7 +375,7 @@ function NarrativeModule() {
   );
 }
 
-// ─── 模块：Competitive ───────────────────────────────────────
+// ─── Competitive ─────────────────────────────────────────────
 function CompetitiveModule() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -421,7 +417,7 @@ function CompetitiveModule() {
   );
 }
 
-// ─── 模块：Action ────────────────────────────────────────────
+// ─── Action ──────────────────────────────────────────────────
 function ActionModule() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -449,7 +445,7 @@ function ActionModule() {
                   <span style={{ color: CYAN, fontSize: 11, fontWeight: 600 }}>{p.outlet}</span>
                   <div style={{ display: "flex", gap: 6 }}>
                     <StatusBadge s={p.priority} />
-                    <StatusBadge s={p.status}   />
+                    <StatusBadge s={p.status} />
                   </div>
                 </div>
                 <div style={{ color: TEXT, fontSize: 12 }}>{p.angle}</div>
@@ -479,8 +475,8 @@ function ActionModule() {
           <CardTitle sub="CEO & founder narrative positioning">Executive Narrative Opportunities</CardTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[
-              { quote: "Conversation is the most underutilized source of professional intelligence.", use: "Op-ed hook / keynote opener",  fit: "High"   },
-              { quote: "We're building the work companion that never forgets, never misses a signal.", use: "Product launch narrative",    fit: "High"   },
+              { quote: "Conversation is the most underutilized source of professional intelligence.", use: "Op-ed hook / keynote opener", fit: "High"   },
+              { quote: "We're building the work companion that never forgets, never misses a signal.", use: "Product launch narrative",   fit: "High"   },
               { quote: "The next frontier of AI isn't chat. It's capturing what humans say in rooms.", use: "Investor/media interviews",  fit: "Medium" },
             ].map(q => (
               <div key={q.quote} style={{ background: "#13151f", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 12px" }}>
@@ -498,7 +494,7 @@ function ActionModule() {
   );
 }
 
-// ─── 模块：AI Insights ───────────────────────────────────────
+// ─── AI Insights ─────────────────────────────────────────────
 function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initialInsights: any; generatedAt: string|null; weekNumber: number|null }) {
   const [insights, setInsights] = useState<any>(initialInsights);
   const [loading,  setLoading]  = useState(false);
@@ -524,7 +520,7 @@ function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initia
             </div>
           </div>
           <button onClick={generate} disabled={loading} style={{ background: loading?BORDER:"linear-gradient(135deg,#6366f1,#22d3ee)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 18px", fontSize: 12, fontWeight: 700, cursor: loading?"not-allowed":"pointer", opacity: loading?0.7:1 }}>
-            {loading ? "Analyzing..." : "Generate Brief"}
+            {loading?"Analyzing...":"Generate Brief"}
           </button>
         </div>
         {!insights && !loading && (
@@ -576,7 +572,7 @@ function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initia
   );
 }
 
-// ─── 模块：Tier 1 Coverage ───────────────────────────────────
+// ─── Tier 1 Coverage ─────────────────────────────────────────
 function Tier1Module({ coverage }: { coverage: any[] }) {
   const [filter, setFilter] = useState("All");
   const companies = ["All","Plaud","Otter.ai","Notion AI","reMarkable"];
@@ -702,30 +698,18 @@ function Tier1Module({ coverage }: { coverage: any[] }) {
   );
 }
 
-// ─── 模块：Brand Awareness ───────────────────────────────────
+// ─── Brand Awareness ─────────────────────────────────────────
 function BrandAwarenessModule() {
   const [keywordData, setKeywordData] = useState<any[]>([]);
   const [pageData,    setPageData]    = useState<any[]>([]);
   const [uploadedAt,  setUploadedAt]  = useState<string|null>(null);
   const [dragging,    setDragging]    = useState(false);
 
-  const parseCSV = (text: string): any[] => {
-    const lines = text.trim().split("\n").filter(l => l.trim());
-    if (lines.length < 2) return [];
-    const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, ""));
-    return lines.slice(1).map(line => {
-      const vals = line.split(",").map(v => v.trim().replace(/"/g, ""));
-      const obj: any = {};
-      headers.forEach((h, i) => obj[h] = vals[i] || "");
-      return obj;
-    });
-  };
-
   const handleFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = e => {
       const text = e.target?.result as string;
-      const rows = parseCSV(text);
+      const rows = parseGA4CSV(text);
       if (!rows.length) return;
       const keys = Object.keys(rows[0]).map(k => k.toLowerCase());
       if (keys.some(k => k.includes("query") || k.includes("clicks"))) {
@@ -745,35 +729,36 @@ function BrandAwarenessModule() {
   };
 
   const hasData = keywordData.length > 0 || pageData.length > 0;
+  const brandKws    = keywordData.filter(r => {
+    const q = (r.Query||r.query||"").toLowerCase();
+    return q.includes("plaud") || q.includes("notepin");
+  });
+  const nonBrandKws = keywordData.filter(r => {
+    const q = (r.Query||r.query||"").toLowerCase();
+    return !q.includes("plaud") && !q.includes("notepin");
+  });
+  const totalBrandClicks       = brandKws.reduce((s,r)=>s+(parseInt(r.Clicks||r.clicks||"0")||0),0);
+  const totalBrandImpressions  = brandKws.reduce((s,r)=>s+(parseInt(r.Impressions||r.impressions||"0")||0),0);
 
-  // 品牌关键词 vs 非品牌关键词分类
-  const brandKeywords    = keywordData.filter(r => (r.Query||r.query||"").toLowerCase().includes("plaud") || (r.Query||r.query||"").toLowerCase().includes("notepin"));
-  const nonBrandKeywords = keywordData.filter(r => !(r.Query||r.query||"").toLowerCase().includes("plaud") && !(r.Query||r.query||"").toLowerCase().includes("notepin"));
-  const totalBrandClicks = brandKeywords.reduce((s,r) => s + (parseInt(r.Clicks||r.clicks||"0")||0), 0);
-  const totalBrandImpressions = brandKeywords.reduce((s,r) => s + (parseInt(r.Impressions||r.impressions||"0")||0), 0);
-
-  // 图表数据
-  const keywordChart = keywordData.slice(0, 10).map(r => ({
-    name: (r.Query||r.query||"").length > 20 ? (r.Query||r.query||"").slice(0,18)+"…" : (r.Query||r.query||""),
+  const keywordChart = keywordData.slice(0,10).map(r => ({
+    name: (r.Query||r.query||"").length>22?(r.Query||r.query||"").slice(0,20)+"…":(r.Query||r.query||""),
     clicks: parseInt(r.Clicks||r.clicks||"0")||0,
-    impressions: parseInt(r.Impressions||r.impressions||"0")||0,
-    isBrand: (r.Query||r.query||"").toLowerCase().includes("plaud") || (r.Query||r.query||"").toLowerCase().includes("notepin"),
+    isBrand: (r.Query||r.query||"").toLowerCase().includes("plaud")||(r.Query||r.query||"").toLowerCase().includes("notepin"),
   }));
-  const pageChart = pageData.slice(0, 8).map(r => ({
-    name: (r["Page path and screen class"]||r["Page path"]||r.page||"").replace("https://www.plaud.ai","").slice(0,25)||"/",
+  const pageChart = pageData.slice(0,8).map(r => ({
+    name: ((r["Page path and screen class"]||r["Page path"]||r.page||"/").replace("https://www.plaud.ai","").slice(0,25))||"/",
     views: parseInt(r.Views||r.views||r["Screen views"]||"0")||0,
     users: parseInt(r.Users||r.users||"0")||0,
   }));
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
-      {/* Upload Zone */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div>
-            <div style={{ color: TEXT, fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>Brand Awareness — GA4 Weekly Data</div>
+            <div style={{ color: TEXT, fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>Brand Awareness — GA4 Last 28 Days</div>
             <div style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>
-              {uploadedAt ? `Last uploaded: ${uploadedAt}` : "Upload your weekly GA4 CSV exports below"}
+              {uploadedAt ? `Last uploaded: ${uploadedAt} · Data period: last 28 days` : "Upload your GA4 CSV exports — export with Last 28 Days date range"}
             </div>
           </div>
           {hasData && (
@@ -781,31 +766,36 @@ function BrandAwarenessModule() {
               <div style={{ background:"#10b98122", border:"1px solid #10b98144", borderRadius:8, padding:"6px 14px", color:"#10b981", fontSize:11, fontWeight:700 }}>
                 Brand Clicks: {totalBrandClicks.toLocaleString()}
               </div>
-              <div style={{ background: ACCENT+"22", border:`1px solid ${ACCENT}44`, borderRadius:8, padding:"6px 14px", color:ACCENT, fontSize:11, fontWeight:700 }}>
+              <div style={{ background:ACCENT+"22", border:`1px solid ${ACCENT}44`, borderRadius:8, padding:"6px 14px", color:ACCENT, fontSize:11, fontWeight:700 }}>
                 Brand Impressions: {totalBrandImpressions.toLocaleString()}
               </div>
             </div>
           )}
         </div>
 
+        {/* How to export guide */}
+        <div style={{ marginBottom: 14, padding: "10px 14px", background: "#13151f", border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 11, color: MUTED, lineHeight: 1.8 }}>
+          <div style={{ color: TEXT, fontWeight: 600, marginBottom: 6 }}>How to export from GA4 (takes ~5 min):</div>
+          <div>1. <span style={{ color: CYAN }}>Keywords CSV:</span> GA4 → Reports → Acquisition → Search Console → Queries → set date to Last 28 days → Download CSV</div>
+          <div>2. <span style={{ color: ACCENT }}>Pages CSV:</span> GA4 → Reports → Engagement → Pages and screens → set date to Last 28 days → Download CSV</div>
+        </div>
+
         {/* Drop zone */}
         <div
-          onDragOver={e => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
+          onDragOver={e=>{e.preventDefault();setDragging(true);}}
+          onDragLeave={()=>setDragging(false)}
           onDrop={onDrop}
-          onClick={() => document.getElementById("csv-input")?.click()}
-          style={{ border:`2px dashed ${dragging?ACCENT:BORDER}`, borderRadius:10, padding:"24px 20px", textAlign:"center", background: dragging?ACCENT+"11":"#13151f", transition:"all 0.15s", cursor:"pointer" }}
+          onClick={()=>document.getElementById("csv-input")?.click()}
+          style={{ border:`2px dashed ${dragging?ACCENT:BORDER}`, borderRadius:10, padding:"24px 20px", textAlign:"center", background:dragging?ACCENT+"11":"#13151f", transition:"all 0.15s", cursor:"pointer" }}
         >
           <div style={{ fontSize:28, marginBottom:8 }}>📂</div>
           <div style={{ color:TEXT, fontSize:13, fontWeight:600, marginBottom:4 }}>Drop CSV files here or click to upload</div>
-          <div style={{ color:MUTED, fontSize:11 }}>
-            Upload <strong style={{color:CYAN}}>ga4-keywords.csv</strong> (Search Console Queries) and <strong style={{color:ACCENT}}>ga4-pages.csv</strong> (Pages & Screens)
-          </div>
+          <div style={{ color:MUTED, fontSize:11 }}>Supports both <strong style={{color:CYAN}}>ga4-keywords.csv</strong> and <strong style={{color:ACCENT}}>ga4-pages.csv</strong> — upload one or both</div>
           <input id="csv-input" type="file" accept=".csv" multiple style={{ display:"none" }}
-            onChange={e => Array.from(e.target.files||[]).forEach(handleFile)} />
+            onChange={e=>Array.from(e.target.files||[]).forEach(handleFile)} />
         </div>
 
-        {/* Status pills */}
+        {/* Status */}
         <div style={{ display:"flex", gap:10, marginTop:10 }}>
           <div style={{ flex:1, background:"#13151f", border:`1px solid ${keywordData.length?CYAN+"55":BORDER}`, borderRadius:8, padding:"8px 12px", fontSize:11 }}>
             <span style={{ color:keywordData.length?"#10b981":MUTED }}>{keywordData.length?"✓":"○"}</span>
@@ -820,52 +810,45 @@ function BrandAwarenessModule() {
         </div>
       </Card>
 
-      {/* Empty state */}
       {!hasData && (
         <Card>
           <div style={{ textAlign:"center", padding:"32px 0", color:MUTED }}>
             <div style={{ fontSize:36, marginBottom:12 }}>📊</div>
             <div style={{ fontSize:13, fontWeight:600, marginBottom:6, color:TEXT }}>No data uploaded yet</div>
-            <div style={{ fontSize:12, marginBottom:4 }}>Export from GA4 → Reports → Acquisition → Search Console → Queries</div>
-            <div style={{ fontSize:12 }}>and GA4 → Reports → Engagement → Pages and screens</div>
+            <div style={{ fontSize:12 }}>Follow the export guide above and drag your CSV files into the upload area.</div>
           </div>
         </Card>
       )}
 
       {hasData && (
         <>
-          {/* Summary tiles */}
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
-            <MetricTile label="Brand Queries"       value={String(brandKeywords.length)}              sub="plaud / notepin terms" />
-            <MetricTile label="Brand Clicks"        value={totalBrandClicks.toLocaleString()}         trend="up" sub="past 28 days" />
-            <MetricTile label="Brand Impressions"   value={totalBrandImpressions.toLocaleString()}    trend="up" sub="past 28 days" />
-            <MetricTile label="Non-Brand Queries"   value={String(nonBrandKeywords.length)}           sub="category keywords" />
+            <MetricTile label="Brand Queries"     value={String(brandKws.length)}             sub="plaud / notepin terms"  />
+            <MetricTile label="Brand Clicks"      value={totalBrandClicks.toLocaleString()}   trend="up" sub="last 28 days" />
+            <MetricTile label="Brand Impressions" value={totalBrandImpressions.toLocaleString()} trend="up" sub="last 28 days" />
+            <MetricTile label="Non-Brand Queries" value={String(nonBrandKws.length)}          sub="category keywords"      />
           </div>
 
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-            {/* Keyword chart */}
             {keywordChart.length>0 && (
               <Card>
-                <CardTitle sub="Clicks vs Impressions — brand keywords highlighted in purple">Search Query Performance</CardTitle>
+                <CardTitle sub="Brand keywords (purple) vs non-brand — last 28 days">Search Query Performance</CardTitle>
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={keywordChart}>
                     <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
                     <XAxis dataKey="name" stroke={MUTED} fontSize={9} angle={-20} textAnchor="end" height={50} />
                     <YAxis stroke={MUTED} fontSize={10} />
                     <Tooltip contentStyle={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:8 }} />
-                    <Legend wrapperStyle={{ fontSize:11 }} />
-                    <Bar dataKey="clicks"      name="Clicks"      radius={[3,3,0,0]}>
+                    <Bar dataKey="clicks" name="Clicks" radius={[3,3,0,0]}>
                       {keywordChart.map((entry,i) => <Cell key={i} fill={entry.isBrand?ACCENT:MUTED} />)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </Card>
             )}
-
-            {/* Top Pages chart */}
             {pageChart.length>0 && (
               <Card>
-                <CardTitle sub="Top pages by views — past 28 days">Top Pages</CardTitle>
+                <CardTitle sub="Top pages by views — last 28 days">Top Pages</CardTitle>
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={pageChart} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
@@ -873,32 +856,31 @@ function BrandAwarenessModule() {
                     <YAxis type="category" dataKey="name" stroke={MUTED} fontSize={9} width={110} />
                     <Tooltip contentStyle={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:8 }} />
                     <Legend wrapperStyle={{ fontSize:11 }} />
-                    <Bar dataKey="views" fill={CYAN}    name="Views" radius={[0,4,4,0]} />
-                    <Bar dataKey="users" fill={ACCENT}  name="Users" radius={[0,4,4,0]} />
+                    <Bar dataKey="views" fill={CYAN}   name="Views" radius={[0,4,4,0]} />
+                    <Bar dataKey="users" fill={ACCENT} name="Users" radius={[0,4,4,0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </Card>
             )}
           </div>
 
-          {/* Keyword detail table */}
           {keywordData.length>0 && (
             <Card>
-              <CardTitle sub="Full brand keyword breakdown">Search Query Details</CardTitle>
+              <CardTitle sub="Full search query breakdown — last 28 days">Search Query Details</CardTitle>
               <div style={{ overflowX:"auto" }}>
                 <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
                   <thead>
                     <tr style={{ borderBottom:`1px solid ${BORDER}` }}>
-                      {["Query","Clicks","Impressions","CTR","Avg. Position","Type"].map(h => (
+                      {["Query","Clicks","Impressions","CTR","Avg. Position","Type"].map(h=>(
                         <th key={h} style={{ color:MUTED, padding:"6px 10px", textAlign:h==="Query"?"left":"center", fontWeight:600 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {keywordData.slice(0,15).map((r,i) => {
-                      const isBrand = (r.Query||r.query||"").toLowerCase().includes("plaud")||(r.Query||r.query||"").toLowerCase().includes("notepin");
+                    {keywordData.slice(0,15).map((r,i)=>{
+                      const isBrand=(r.Query||r.query||"").toLowerCase().includes("plaud")||(r.Query||r.query||"").toLowerCase().includes("notepin");
                       return (
-                        <tr key={i} style={{ borderBottom:`1px solid ${BORDER}22`, background: isBrand?ACCENT+"08":"transparent" }}>
+                        <tr key={i} style={{ borderBottom:`1px solid ${BORDER}22`, background:isBrand?ACCENT+"08":"transparent" }}>
                           <td style={{ color:TEXT,   padding:"8px 10px", fontWeight:600 }}>{r.Query||r.query}</td>
                           <td style={{ color:ACCENT, padding:"8px 10px", textAlign:"center", fontWeight:700 }}>{r.Clicks||r.clicks}</td>
                           <td style={{ color:MUTED,  padding:"8px 10px", textAlign:"center" }}>{r.Impressions||r.impressions}</td>
@@ -918,21 +900,20 @@ function BrandAwarenessModule() {
             </Card>
           )}
 
-          {/* Top pages table */}
           {pageData.length>0 && (
             <Card>
-              <CardTitle sub="Top 10 pages by views">Page Performance Details</CardTitle>
+              <CardTitle sub="Top 10 pages by views — last 28 days">Page Performance Details</CardTitle>
               <div style={{ overflowX:"auto" }}>
                 <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
                   <thead>
                     <tr style={{ borderBottom:`1px solid ${BORDER}` }}>
-                      {["Page","Views","Users","Avg. Engagement Time"].map(h => (
+                      {["Page","Views","Users","Avg. Engagement Time"].map(h=>(
                         <th key={h} style={{ color:MUTED, padding:"6px 10px", textAlign:h==="Page"?"left":"center", fontWeight:600 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {pageData.slice(0,10).map((r,i) => (
+                    {pageData.slice(0,10).map((r,i)=>(
                       <tr key={i} style={{ borderBottom:`1px solid ${BORDER}22` }}>
                         <td style={{ color:CYAN,   padding:"8px 10px", fontWeight:600, fontSize:11 }}>
                           {(r["Page path and screen class"]||r["Page path"]||r.page||"/").replace("https://www.plaud.ai","")}
