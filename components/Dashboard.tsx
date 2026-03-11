@@ -1073,79 +1073,7 @@ function BrandAwarenessModule({ keywordData,pageData,uploadedAt,onLoad,trendsDat
 
   return (
     <div style={{display:"grid",gap:16}}>
-      {/* GA4 Upload */}
-      <Card>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <div>
-            <div style={{color:TEXT,fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:"0.05em"}}>Brand Awareness — GA4 Last 28 Days</div>
-            <div style={{color:MUTED,fontSize:11,marginTop:2}}>{uploadedAt?`Last uploaded: ${uploadedAt} · Data period: last 28 days`:"Upload GA4 CSV exports — use Last 28 Days date range"}</div>
-          </div>
-          {hasData&&(
-            <div style={{display:"flex",gap:8}}>
-              <div style={{background:"#10b98122",border:"1px solid #10b98144",borderRadius:8,padding:"6px 14px",color:"#10b981",fontSize:11,fontWeight:700}}>Brand Clicks: {totalBrandClicks.toLocaleString()}</div>
-              <div style={{background:ACCENT+"22",border:`1px solid ${ACCENT}44`,borderRadius:8,padding:"6px 14px",color:ACCENT,fontSize:11,fontWeight:700}}>Brand Impressions: {totalBrandImpressions.toLocaleString()}</div>
-            </div>
-          )}
-        </div>
-        <div style={{marginBottom:14,padding:"10px 14px",background:"#13151f",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:MUTED,lineHeight:1.8}}>
-          <div style={{color:TEXT,fontWeight:600,marginBottom:6}}>How to export from GA4:</div>
-          <div>1. <span style={{color:CYAN}}>Keywords CSV:</span> GA4 → Reports → Acquisition → Search Console → Queries → Last 28 days → Download CSV</div>
-          <div>2. <span style={{color:ACCENT}}>Pages CSV:</span> GA4 → Reports → Engagement → Pages and screens → Last 28 days → Download CSV</div>
-        </div>
-        <div onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)}
-          onDrop={e=>{e.preventDefault();setDragging(false);Array.from(e.dataTransfer.files).forEach(handleFile);}}
-          onClick={()=>document.getElementById("ga4-input")?.click()}
-          style={{border:`2px dashed ${dragging?ACCENT:BORDER}`,borderRadius:10,padding:"24px 20px",textAlign:"center",background:dragging?ACCENT+"11":"#13151f",transition:"all 0.15s",cursor:"pointer"}}>
-          <div style={{fontSize:28,marginBottom:8}}>📂</div>
-          <div style={{color:TEXT,fontSize:13,fontWeight:600,marginBottom:4}}>Drop CSV files here or click to upload</div>
-          <div style={{color:MUTED,fontSize:11}}>Supports <strong style={{color:CYAN}}>ga4-keywords.csv</strong> and <strong style={{color:ACCENT}}>ga4-pages.csv</strong></div>
-          <input id="ga4-input" type="file" accept=".csv" multiple style={{display:"none"}} onChange={e=>Array.from(e.target.files||[]).forEach(handleFile)}/>
-        </div>
-        <div style={{display:"flex",gap:10,marginTop:10}}>
-          <div style={{flex:1,background:"#13151f",border:`1px solid ${keywordData.length?CYAN+"55":BORDER}`,borderRadius:8,padding:"8px 12px",fontSize:11}}>
-            <span style={{color:keywordData.length?"#10b981":MUTED}}>{keywordData.length?"✓":"○"}</span>
-            <span style={{color:MUTED,marginLeft:6}}>Keywords CSV</span>
-            {keywordData.length>0&&<span style={{color:CYAN,marginLeft:6}}>{keywordData.length} queries loaded</span>}
-          </div>
-          <div style={{flex:1,background:"#13151f",border:`1px solid ${pageData.length?ACCENT+"55":BORDER}`,borderRadius:8,padding:"8px 12px",fontSize:11}}>
-            <span style={{color:pageData.length?"#10b981":MUTED}}>{pageData.length?"✓":"○"}</span>
-            <span style={{color:MUTED,marginLeft:6}}>Pages CSV</span>
-            {pageData.length>0&&<span style={{color:ACCENT,marginLeft:6}}>{pageData.length} pages loaded</span>}
-          </div>
-        </div>
-      </Card>
 
-      {/* Google Trends Upload */}
-      <Card>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <div>
-            <div style={{color:TEXT,fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:"0.05em"}}>Google Trends — Search Interest Over Time</div>
-            <div style={{color:MUTED,fontSize:11,marginTop:2}}>{trendsUploadedAt?`Last uploaded: ${trendsUploadedAt} · ${trendsKeywords.length} keywords · ${trendsData.length} data points`:"Upload Google Trends CSV export"}</div>
-          </div>
-          {hasTrends&&(
-            <div style={{display:"flex",gap:6,flexWrap:"wrap" as const}}>
-              {trendsKeywords.map((kw,i)=>(
-                <span key={kw} style={{background:TREND_COLORS[i%TREND_COLORS.length]+"22",border:`1px solid ${TREND_COLORS[i%TREND_COLORS.length]}44`,borderRadius:6,padding:"3px 10px",color:TREND_COLORS[i%TREND_COLORS.length],fontSize:11,fontWeight:700}}>{kw}</span>
-              ))}
-            </div>
-          )}
-        </div>
-        <div style={{marginBottom:14,padding:"10px 14px",background:"#13151f",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:MUTED,lineHeight:1.8}}>
-          <div style={{color:TEXT,fontWeight:600,marginBottom:6}}>How to export from Google Trends:</div>
-          <div>1. Go to <span style={{color:CYAN}}>trends.google.com</span> → Search "Plaud" + add competitors</div>
-          <div>2. Set date range → Click <span style={{color:ACCENT}}>↓ download</span> button</div>
-          <div>3. Upload the downloaded <strong style={{color:CYAN}}>multiTimeline.csv</strong> below</div>
-        </div>
-        <div onDragOver={e=>{e.preventDefault();setDraggingTrends(true);}} onDragLeave={()=>setDraggingTrends(false)}
-          onDrop={e=>{e.preventDefault();setDraggingTrends(false);Array.from(e.dataTransfer.files).forEach(handleTrendsFile);}}
-          onClick={()=>document.getElementById("trends-input")?.click()}
-          style={{border:`2px dashed ${draggingTrends?"#10b981":BORDER}`,borderRadius:10,padding:"24px 20px",textAlign:"center",background:draggingTrends?"#10b98111":"#13151f",transition:"all 0.15s",cursor:"pointer"}}>
-          <div style={{fontSize:28,marginBottom:8}}>📈</div>
-          <div style={{color:TEXT,fontSize:13,fontWeight:600,marginBottom:4}}>Drop Google Trends CSV here or click to upload</div>
-          <div style={{color:MUTED,fontSize:11}}>Supports <strong style={{color:CYAN}}>multiTimeline.csv</strong></div>
-          <input id="trends-input" type="file" accept=".csv" style={{display:"none"}} onChange={e=>{if(e.target.files?.[0])handleTrendsFile(e.target.files[0]);}}/>
-        </div>
-      </Card>
 
       {/* Trends Chart */}
       {hasTrends&&(
@@ -1264,6 +1192,79 @@ function BrandAwarenessModule({ keywordData,pageData,uploadedAt,onLoad,trendsDat
           )}
         </>
       )}
+            {/* GA4 Upload */}
+      <Card>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div>
+            <div style={{color:TEXT,fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:"0.05em"}}>Brand Awareness — GA4 Last 28 Days</div>
+            <div style={{color:MUTED,fontSize:11,marginTop:2}}>{uploadedAt?`Last uploaded: ${uploadedAt} · Data period: last 28 days`:"Upload GA4 CSV exports — use Last 28 Days date range"}</div>
+          </div>
+          {hasData&&(
+            <div style={{display:"flex",gap:8}}>
+              <div style={{background:"#10b98122",border:"1px solid #10b98144",borderRadius:8,padding:"6px 14px",color:"#10b981",fontSize:11,fontWeight:700}}>Brand Clicks: {totalBrandClicks.toLocaleString()}</div>
+              <div style={{background:ACCENT+"22",border:`1px solid ${ACCENT}44`,borderRadius:8,padding:"6px 14px",color:ACCENT,fontSize:11,fontWeight:700}}>Brand Impressions: {totalBrandImpressions.toLocaleString()}</div>
+            </div>
+          )}
+        </div>
+        <div style={{marginBottom:14,padding:"10px 14px",background:"#13151f",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:MUTED,lineHeight:1.8}}>
+          <div style={{color:TEXT,fontWeight:600,marginBottom:6}}>How to export from GA4:</div>
+          <div>1. <span style={{color:CYAN}}>Keywords CSV:</span> GA4 → Reports → Acquisition → Search Console → Queries → Last 28 days → Download CSV</div>
+          <div>2. <span style={{color:ACCENT}}>Pages CSV:</span> GA4 → Reports → Engagement → Pages and screens → Last 28 days → Download CSV</div>
+        </div>
+        <div onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)}
+          onDrop={e=>{e.preventDefault();setDragging(false);Array.from(e.dataTransfer.files).forEach(handleFile);}}
+          onClick={()=>document.getElementById("ga4-input")?.click()}
+          style={{border:`2px dashed ${dragging?ACCENT:BORDER}`,borderRadius:10,padding:"24px 20px",textAlign:"center",background:dragging?ACCENT+"11":"#13151f",transition:"all 0.15s",cursor:"pointer"}}>
+          <div style={{fontSize:28,marginBottom:8}}>📂</div>
+          <div style={{color:TEXT,fontSize:13,fontWeight:600,marginBottom:4}}>Drop CSV files here or click to upload</div>
+          <div style={{color:MUTED,fontSize:11}}>Supports <strong style={{color:CYAN}}>ga4-keywords.csv</strong> and <strong style={{color:ACCENT}}>ga4-pages.csv</strong></div>
+          <input id="ga4-input" type="file" accept=".csv" multiple style={{display:"none"}} onChange={e=>Array.from(e.target.files||[]).forEach(handleFile)}/>
+        </div>
+        <div style={{display:"flex",gap:10,marginTop:10}}>
+          <div style={{flex:1,background:"#13151f",border:`1px solid ${keywordData.length?CYAN+"55":BORDER}`,borderRadius:8,padding:"8px 12px",fontSize:11}}>
+            <span style={{color:keywordData.length?"#10b981":MUTED}}>{keywordData.length?"✓":"○"}</span>
+            <span style={{color:MUTED,marginLeft:6}}>Keywords CSV</span>
+            {keywordData.length>0&&<span style={{color:CYAN,marginLeft:6}}>{keywordData.length} queries loaded</span>}
+          </div>
+          <div style={{flex:1,background:"#13151f",border:`1px solid ${pageData.length?ACCENT+"55":BORDER}`,borderRadius:8,padding:"8px 12px",fontSize:11}}>
+            <span style={{color:pageData.length?"#10b981":MUTED}}>{pageData.length?"✓":"○"}</span>
+            <span style={{color:MUTED,marginLeft:6}}>Pages CSV</span>
+            {pageData.length>0&&<span style={{color:ACCENT,marginLeft:6}}>{pageData.length} pages loaded</span>}
+          </div>
+        </div>
+      </Card>
+
+      {/* Google Trends Upload */}
+      <Card>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div>
+            <div style={{color:TEXT,fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:"0.05em"}}>Google Trends — Search Interest Over Time</div>
+            <div style={{color:MUTED,fontSize:11,marginTop:2}}>{trendsUploadedAt?`Last uploaded: ${trendsUploadedAt} · ${trendsKeywords.length} keywords · ${trendsData.length} data points`:"Upload Google Trends CSV export"}</div>
+          </div>
+          {hasTrends&&(
+            <div style={{display:"flex",gap:6,flexWrap:"wrap" as const}}>
+              {trendsKeywords.map((kw,i)=>(
+                <span key={kw} style={{background:TREND_COLORS[i%TREND_COLORS.length]+"22",border:`1px solid ${TREND_COLORS[i%TREND_COLORS.length]}44`,borderRadius:6,padding:"3px 10px",color:TREND_COLORS[i%TREND_COLORS.length],fontSize:11,fontWeight:700}}>{kw}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{marginBottom:14,padding:"10px 14px",background:"#13151f",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:MUTED,lineHeight:1.8}}>
+          <div style={{color:TEXT,fontWeight:600,marginBottom:6}}>How to export from Google Trends:</div>
+          <div>1. Go to <span style={{color:CYAN}}>trends.google.com</span> → Search "Plaud" + add competitors</div>
+          <div>2. Set date range → Click <span style={{color:ACCENT}}>↓ download</span> button</div>
+          <div>3. Upload the downloaded <strong style={{color:CYAN}}>multiTimeline.csv</strong> below</div>
+        </div>
+        <div onDragOver={e=>{e.preventDefault();setDraggingTrends(true);}} onDragLeave={()=>setDraggingTrends(false)}
+          onDrop={e=>{e.preventDefault();setDraggingTrends(false);Array.from(e.dataTransfer.files).forEach(handleTrendsFile);}}
+          onClick={()=>document.getElementById("trends-input")?.click()}
+          style={{border:`2px dashed ${draggingTrends?"#10b981":BORDER}`,borderRadius:10,padding:"24px 20px",textAlign:"center",background:draggingTrends?"#10b98111":"#13151f",transition:"all 0.15s",cursor:"pointer"}}>
+          <div style={{fontSize:28,marginBottom:8}}>📈</div>
+          <div style={{color:TEXT,fontSize:13,fontWeight:600,marginBottom:4}}>Drop Google Trends CSV here or click to upload</div>
+          <div style={{color:MUTED,fontSize:11}}>Supports <strong style={{color:CYAN}}>multiTimeline.csv</strong></div>
+          <input id="trends-input" type="file" accept=".csv" style={{display:"none"}} onChange={e=>{if(e.target.files?.[0])handleTrendsFile(e.target.files[0]);}}/>
+        </div>
+      </Card>
     </div>
   );
 }
