@@ -3,9 +3,12 @@ import { NextResponse } from "next/server";
 
 const redis = Redis.fromEnv();
 
+export const maxDuration = 30;
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const text = await req.text();
+    const body = JSON.parse(text);
     const { key, data } = body;
     if (!key || !data) return NextResponse.json({ error: "Missing key or data" }, { status: 400 });
     await redis.set(key, JSON.stringify(data));
