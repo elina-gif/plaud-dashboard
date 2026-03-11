@@ -1,22 +1,5 @@
 {
   "weekNumber": 11,
-  "generatedAt": "2026-03-11T05:00:23.536Z",
-  "insights": {
-    "summary": "Plaud AI maintained momentum from CES 2026 coverage but missed key opportunities to capitalize on Humane AI's negative cycle. The 'AI Note Taker' label persists across 62% of coverage, indicating insufficient narrative evolution toward the target 'AI Work Companion' positioning.",
-    "insights": [
-      "Long-tail CES pickup concentrated in tech trade publications rather than mainstream business media, limiting enterprise audience reach",
-      "Humane AI's product failures created a 72-hour window to position Plaud as 'the AI wearable that actually works' - opportunity missed",
-      "Bloomberg and CNBC remain unengaged despite Otter.ai securing enterprise-focused coverage in both outlets this week",
-      "Current messaging emphasizes capture functionality over the full Extract-Utilize workflow, reinforcing note-taking perception"
-    ],
-    "actions": [
-      "Pitch Bloomberg Technology on 'AI Work Companion vs AI Note Taker' angle with enterprise adoption data by Thursday",
-      "Secure CNBC Squawk Box segment contrasting Plaud's practical AI approach with Humane's failed promises",
-      "Brief top 3 spokespeople to lead with 'work companion' language in all interviews, retire 'note taker' entirely",
-      "Launch reactive campaign highlighting Plaud's reliability amid AI wearable skepticism using #AIThatWorks hashtag",
-      "Coordinate customer case studies showcasing Extract-Utilize workflow for Friday enterprise media push"
-    ],
-    "risk": "Continued positioning as 'AI Note Taker' commoditizes Plaud against established players like Otter.ai while missing the higher-value work companion category.",
-    "opportunity": "Humane AI's stumbles created market skepticism that Plaud can uniquely address by demonstrating practical, reliable AI wearable execution."
-  }
+  "generatedAt": "2026-03-11T05:07:39.446Z",
+  "insights": {}
 }
