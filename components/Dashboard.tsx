@@ -1166,22 +1166,50 @@ export default function Dashboard({ initialInsights, initialCoverage, initialMet
   // Shared Meltwater state
   const [mwData, setMwData] = useState<any[]>([]);
   const [mwDate, setMwDate] = useState<string|null>(null);
-  const handleMwLoad = (rows: any[], date: string) => { setMwData(rows); setMwDate(date); };
 
   // Shared GA4 state
   const [keywordData, setKeywordData] = useState<any[]>([]);
   const [pageData,    setPageData]    = useState<any[]>([]);
   const [ga4Date,     setGa4Date]     = useState<string|null>(null);
-  const handleGA4Load = (keywords: any[], pages: any[], date: string) => {
-    setKeywordData(keywords); setPageData(pages); setGa4Date(date);
-  };
 
   // Shared Google Trends state
   const [trendsData,       setTrendsData]       = useState<any[]>([]);
   const [trendsKeywords,   setTrendsKeywords]   = useState<string[]>([]);
   const [trendsUploadedAt, setTrendsUploadedAt] = useState<string|null>(null);
-  const handleTrendsLoad = (data: any[], keywords: string[], date: string) => {
+
+  // ── 页面加载时从数据库读取所有数据 ──
+  const [loaded, setLoaded] = useState(false);
+  useState(() => {
+    const load = async () => {
+      try {
+        const [mw, ga4, trends] = await Promise.all([
+          fetch("/api/load-data?key=meltwater").then(r => r.json()),
+          fetch("/api/load-data?key=ga4").then(r => r.json()),
+          fetch("/api/load-data?key=trends").then(r => r.json()),
+        ]);
+        if (mw.data)     { setMwData(mw.data.rows);         setMwDate(mw.data.date); }
+        if (ga4.data)    { setKeywordData(ga4.data.keywords); setPageData(ga4.data.pages); setGa4Date(ga4.data.date); }
+        if (trends.data) { setTrendsData(trends.data.rows);  setTrendsKeywords(trends.data.keywords); setTrendsUploadedAt(trends.data.date); }
+      } catch {}
+      setLoaded(true);
+    };
+    load();
+  });
+
+  // ── 上传处理（保存到数据库 + 更新 state）──
+  const handleMwLoad = async (rows: any[], date: string) => {
+    setMwData(rows); setMwDate(date);
+    await fetch("/api/save-data", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ key:"meltwater", data:{ rows, date } }) });
+  };
+
+  const handleGA4Load = async (keywords: any[], pages: any[], date: string) => {
+    setKeywordData(keywords); setPageData(pages); setGa4Date(date);
+    await fetch("/api/save-data", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ key:"ga4", data:{ keywords, pages, date } }) });
+  };
+
+  const handleTrendsLoad = async (data: any[], keywords: string[], date: string) => {
     setTrendsData(data); setTrendsKeywords(keywords); setTrendsUploadedAt(date);
+    await fetch("/api/save-data", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ key:"trends", data:{ rows:data, keywords, date } }) });
   };
 
   return (
@@ -1205,24 +1233,27 @@ export default function Dashboard({ initialInsights, initialCoverage, initialMet
         ))}
       </div>
       <div style={{ padding:24, maxWidth:1200, margin:"0 auto" }}>
-        {tab===0 && <PulseModule metrics={initialMetrics} mwData={mwData} mwDate={mwDate} />}
-        {tab===1 && <NarrativeModule />}
-        {tab===2 && <CompetitiveModule />}
-        {tab===3 && <ActionModule coverage={initialCoverage||[]} />}
-        {tab===4 && <AIInsightsModule initialInsights={initialInsights} generatedAt={generatedAt} weekNumber={weekNumber} />}
-        {tab===5 && <Tier1Module onMeltwaterLoad={handleMwLoad} mwRows={mwData} uploadedAt={mwDate} />}
-        {tab===6 && (
-          <BrandAwarenessModule
-            keywordData={keywordData}
-            pageData={pageData}
-            uploadedAt={ga4Date}
-            onLoad={handleGA4Load}
-            trendsData={trendsData}
-            trendsKeywords={trendsKeywords}
-            trendsUploadedAt={trendsUploadedAt}
-            onTrendsLoad={handleTrendsLoad}
-          />
-        )}
+        {!loaded && <div style={{ color:MUTED, fontSize:12, textAlign:"center", padding:"40px 0" }}>Loading data...</div>}
+        {loaded && <>
+          {tab===0 && <PulseModule metrics={initialMetrics} mwData={mwData} mwDate={mwDate} />}
+          {tab===1 && <NarrativeModule />}
+          {tab===2 && <CompetitiveModule />}
+          {tab===3 && <ActionModule coverage={initialCoverage||[]} />}
+          {tab===4 && <AIInsightsModule initialInsights={initialInsights} generatedAt={generatedAt} weekNumber={weekNumber} />}
+          {tab===5 && <Tier1Module onMeltwaterLoad={handleMwLoad} mwRows={mwData} uploadedAt={mwDate} />}
+          {tab===6 && (
+            <BrandAwarenessModule
+              keywordData={keywordData}
+              pageData={pageData}
+              uploadedAt={ga4Date}
+              onLoad={handleGA4Load}
+              trendsData={trendsData}
+              trendsKeywords={trendsKeywords}
+              trendsUploadedAt={trendsUploadedAt}
+              onTrendsLoad={handleTrendsLoad}
+            />
+          )}
+        </>}
       </div>
     </div>
   );
