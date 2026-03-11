@@ -1,14 +1,67 @@
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(req: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "Missing API key" }, { status: 500 });
+  if (!apiKey) return NextResponse.json({ error: "Missing API key" }, { status: 500 });
+
+  // 安全解析 body，兼容空 body 和 JSON body
+  let body: any = {};
+  try {
+    const text = await req.text();
+    if (text) body = JSON.parse(text);
+  } catch {}
+
+  // ── 模式 1：记者 Pitch 推荐 ──────────────────────────────
+  if (body.journalistMode && body.journalists) {
+    const prompt = `You are a senior PR strategist for Plaud AI.
+
+Plaud's current narrative priorities:
+- Primary: Position Plaud as "AI Work Companion" (currently only 38% penetration, target 70%)
+- Secondary: "Conversation Intelligence" and "Capture, Extract, Utilize" loop
+- Gap: Missing from Bloomberg, CNBC financial press
+- Opportunity: Humane AI negative cycle = chance to position Plaud as "AI wearable that works"
+
+Here are the journalists in Plaud's network:
+${body.journalists}
+
+Recommend the TOP 5 journalists to pitch THIS WEEK, ranked by priority.
+
+Return ONLY a raw JSON array (no markdown, no code fences) with this exact structure:
+[
+  {
+    "name": "journalist name",
+    "outlet": "outlet name",
+    "priority": "High",
+    "angle": "specific pitch angle in one sentence",
+    "reason": "why this journalist is the right fit right now in 1-2 sentences"
+  }
+]`;
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type":      "application/json",
+          "x-api-key":         apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model:      "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system:     "You are a senior PR strategist. Respond ONLY in a raw JSON array. No markdown, no code fences, no extra text.",
+          messages:   [{ role: "user", content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      const raw  = data.content?.find((b: any) => b.type === "text")?.text || "[]";
+      const recs = JSON.parse(raw.replace(/```json|```/g, "").trim());
+      return NextResponse.json({ journalistRecs: recs });
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
   }
 
-  // 公司内部代理地址
-  const BASE_URL = "http://34.216.169.232:30001/vertex";
-
+  // ── 模式 2：标准 Weekly Brief ────────────────────────────
   const prompt = `Analyze Plaud AI's PR performance this week.
 
 BRAND CONTEXT:
@@ -17,7 +70,12 @@ BRAND CONTEXT:
 - Core loop: Capture, Extract, Utilize
 - Narrative gap: Still labeled "AI Note Taker" more than "AI Work Companion"
 - Key outlets missing: Bloomberg, CNBC
-- Competitors: Otter.ai, Notion AI, reMarkable
+- Competitors: Otter.ai ($100M ARR, enterprise push), Notion AI, reMarkable
+
+THIS WEEK'S SIGNALS:
+- Plaud CES 2026 coverage still generating long-tail pickup
+- Humane AI negative press cycle = opportunity to position Plaud as AI wearable that works
+- AI Work Companion narrative underpenetrated (38% vs 70% target)
 
 Return ONLY raw JSON (no markdown, no code fences) with these exact keys:
 - summary: string (2-3 sentence executive brief)
@@ -27,33 +85,25 @@ Return ONLY raw JSON (no markdown, no code fences) with these exact keys:
 - opportunity: string (1 sentence)`;
 
   try {
-    const res = await fetch(`${BASE_URL}/v1/messages`, {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
+        "Content-Type":      "application/json",
+        "x-api-key":         apiKey,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model:      "claude-sonnet-4-20250514",
         max_tokens: 1000,
-        system: "You are a senior PR strategist for Plaud AI. Respond ONLY in raw JSON. No markdown, no code fences, no extra text.",
-        messages: [{ role: "user", content: prompt }],
+        system:     "You are a senior PR strategist for Plaud AI. Respond ONLY in raw JSON. No markdown, no code fences, no extra text.",
+        messages:   [{ role: "user", content: prompt }],
       }),
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Anthropic error:", res.status, errText);
-      return NextResponse.json({ error: `Anthropic error: ${res.status}` }, { status: 500 });
-    }
-
-    const data = await res.json();
-    const raw = data.content?.find((b: any) => b.type === "text")?.text || "{}";
+    const data   = await res.json();
+    const raw    = data.content?.find((b: any) => b.type === "text")?.text || "{}";
     const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
     return NextResponse.json(parsed);
   } catch (e: any) {
-    console.error("Route error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
