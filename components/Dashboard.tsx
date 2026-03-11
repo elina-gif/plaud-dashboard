@@ -913,38 +913,7 @@ function Tier1Module({ onMeltwaterLoad, mwRows, uploadedAt }: {
 
   return (
     <div style={{display:"grid",gap:16}}>
-      <Card>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-          <div>
-            <div style={{color:TEXT,fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:"0.05em"}}>Tier 1 Coverage — Meltwater Upload</div>
-            <div style={{color:MUTED,fontSize:11,marginTop:2}}>
-              {uploadedAt?`Last uploaded: ${uploadedAt} · ${tier1Rows.length} articles with Reach >1M`:"Upload Meltwater CSV — Plaud mentions with Reach >1M will be shown"}
-            </div>
-          </div>
-          {tier1Rows.length>0&&(
-            <div style={{display:"flex",gap:8}}>
-              <div style={{background:"#10b98122",border:"1px solid #10b98144",borderRadius:8,padding:"4px 12px",color:"#10b981",fontSize:11,fontWeight:700}}>{pos} Positive</div>
-              <div style={{background:"#f43f5e22",border:"1px solid #f43f5e44",borderRadius:8,padding:"4px 12px",color:"#f43f5e",fontSize:11,fontWeight:700}}>{neg} Negative</div>
-              <div style={{background:BORDER,border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 12px",color:MUTED,fontSize:11,fontWeight:700}}>{neu} Neutral</div>
-            </div>
-          )}
-        </div>
-        <div style={{marginBottom:12,padding:"8px 12px",background:"#13151f",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:MUTED,lineHeight:1.8}}>
-          <div style={{color:TEXT,fontWeight:600,marginBottom:4}}>How to export from Meltwater:</div>
-          <div>1. Search <strong style={{color:ACCENT}}>"Plaud"</strong> → Set date range → Click <strong style={{color:CYAN}}>Export → CSV</strong></div>
-          <div>2. Upload below — articles with <strong style={{color:ACCENT}}>Reach &gt; 1,000,000</strong> will be shown as Tier 1</div>
-          <div>3. This data also updates the <strong style={{color:CYAN}}>Pulse</strong> tab metrics automatically</div>
-        </div>
-        <div onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)}
-          onDrop={e=>{e.preventDefault();setDragging(false);Array.from(e.dataTransfer.files).forEach(handleFile);}}
-          onClick={()=>document.getElementById("mw-tier1-input")?.click()}
-          style={{border:`2px dashed ${dragging?ACCENT:BORDER}`,borderRadius:10,padding:"20px",textAlign:"center",background:dragging?ACCENT+"11":"#13151f",transition:"all 0.15s",cursor:"pointer"}}>
-          <div style={{fontSize:24,marginBottom:6}}>📊</div>
-          <div style={{color:TEXT,fontSize:12,fontWeight:600,marginBottom:2}}>Drop Meltwater CSV here or click to upload</div>
-          <div style={{color:MUTED,fontSize:11}}>Supports standard Meltwater export format</div>
-          <input id="mw-tier1-input" type="file" accept=".csv" style={{display:"none"}} onChange={e=>Array.from(e.target.files||[]).forEach(handleFile)}/>
-        </div>
-      </Card>
+ 
       {tier1Rows.length===0&&(
         <Card><div style={{textAlign:"center",padding:"32px 0",color:MUTED}}>
           <div style={{fontSize:36,marginBottom:12}}>📰</div>
@@ -1003,6 +972,38 @@ function Tier1Module({ onMeltwaterLoad, mwRows, uploadedAt }: {
           </Card>
         </>
       )}
+           <Card>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div>
+            <div style={{color:TEXT,fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:"0.05em"}}>Tier 1 Coverage — Meltwater Upload</div>
+            <div style={{color:MUTED,fontSize:11,marginTop:2}}>
+              {uploadedAt?`Last uploaded: ${uploadedAt} · ${tier1Rows.length} articles with Reach >1M`:"Upload Meltwater CSV — Plaud mentions with Reach >1M will be shown"}
+            </div>
+          </div>
+          {tier1Rows.length>0&&(
+            <div style={{display:"flex",gap:8}}>
+              <div style={{background:"#10b98122",border:"1px solid #10b98144",borderRadius:8,padding:"4px 12px",color:"#10b981",fontSize:11,fontWeight:700}}>{pos} Positive</div>
+              <div style={{background:"#f43f5e22",border:"1px solid #f43f5e44",borderRadius:8,padding:"4px 12px",color:"#f43f5e",fontSize:11,fontWeight:700}}>{neg} Negative</div>
+              <div style={{background:BORDER,border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 12px",color:MUTED,fontSize:11,fontWeight:700}}>{neu} Neutral</div>
+            </div>
+          )}
+        </div>
+        <div style={{marginBottom:12,padding:"8px 12px",background:"#13151f",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:MUTED,lineHeight:1.8}}>
+          <div style={{color:TEXT,fontWeight:600,marginBottom:4}}>How to export from Meltwater:</div>
+          <div>1. Search <strong style={{color:ACCENT}}>"Plaud"</strong> → Set date range → Click <strong style={{color:CYAN}}>Export → CSV</strong></div>
+          <div>2. Upload below — articles with <strong style={{color:ACCENT}}>Reach &gt; 1,000,000</strong> will be shown as Tier 1</div>
+          <div>3. This data also updates the <strong style={{color:CYAN}}>Pulse</strong> tab metrics automatically</div>
+        </div>
+        <div onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)}
+          onDrop={e=>{e.preventDefault();setDragging(false);Array.from(e.dataTransfer.files).forEach(handleFile);}}
+          onClick={()=>document.getElementById("mw-tier1-input")?.click()}
+          style={{border:`2px dashed ${dragging?ACCENT:BORDER}`,borderRadius:10,padding:"20px",textAlign:"center",background:dragging?ACCENT+"11":"#13151f",transition:"all 0.15s",cursor:"pointer"}}>
+          <div style={{fontSize:24,marginBottom:6}}>📊</div>
+          <div style={{color:TEXT,fontSize:12,fontWeight:600,marginBottom:2}}>Drop Meltwater CSV here or click to upload</div>
+          <div style={{color:MUTED,fontSize:11}}>Supports standard Meltwater export format</div>
+          <input id="mw-tier1-input" type="file" accept=".csv" style={{display:"none"}} onChange={e=>Array.from(e.target.files||[]).forEach(handleFile)}/>
+        </div>
+      </Card>
     </div>
   );
 }
