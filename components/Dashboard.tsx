@@ -700,22 +700,22 @@ function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initia
 }
 
 // ─── Tier 1 Coverage（Meltwater CSV 上传 + 展示）────────────
-function Tier1Module({ onMeltwaterLoad }: { onMeltwaterLoad: (rows: any[], date: string) => void }) {
-  const [mwRows,    setMwRows]    = useState<any[]>([]);
-  const [uploadedAt,setUploadedAt]= useState<string|null>(null);
-  const [dragging,  setDragging]  = useState(false);
-  const [filter,    setFilter]    = useState("All");
+function Tier1Module({ onMeltwaterLoad, mwRows, uploadedAt }: {
+  onMeltwaterLoad: (rows: any[], date: string) => void;
+  mwRows: any[];
+  uploadedAt: string | null;
+}) {
+  const [dragging, setDragging] = useState(false);
+  const [filter,   setFilter]   = useState("All");
 
   const handleFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = e => {
-      const text    = e.target?.result as string;
-      const raw     = parseMeltwaterCSV(text);
+      const text = e.target?.result as string;
+      const raw  = parseMeltwaterCSV(text);
       if (!raw.length) return;
-      const norm    = raw.map(normalizeMeltwaterRow);
-      const date    = new Date().toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" });
-      setMwRows(norm);
-      setUploadedAt(date);
+      const norm = raw.map(normalizeMeltwaterRow);
+      const date = new Date().toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" });
       onMeltwaterLoad(norm, date);
     };
     reader.readAsText(file);
@@ -848,11 +848,13 @@ function Tier1Module({ onMeltwaterLoad }: { onMeltwaterLoad: (rows: any[], date:
 }
 
 // ─── Brand Awareness ─────────────────────────────────────────
-function BrandAwarenessModule() {
-  const [keywordData, setKeywordData] = useState<any[]>([]);
-  const [pageData,    setPageData]    = useState<any[]>([]);
-  const [uploadedAt,  setUploadedAt]  = useState<string|null>(null);
-  const [dragging,    setDragging]    = useState(false);
+function BrandAwarenessModule({ keywordData, pageData, uploadedAt, onLoad }: {
+  keywordData: any[];
+  pageData: any[];
+  uploadedAt: string | null;
+  onLoad: (keywords: any[], pages: any[], date: string) => void;
+}) {
+  const [dragging, setDragging] = useState(false);
 
   const normalizeRow = (row: any): any => {
     const out: any = {};
@@ -879,9 +881,12 @@ function BrandAwarenessModule() {
       if (!rawRows.length) return;
       const rows = rawRows.map(normalizeRow);
       const keys = Object.keys(rawRows[0]).map(k => k.toLowerCase());
-      if (keys.some(k => k.includes("query")||k.includes("search term")||k.includes("click"))) setKeywordData(rows);
-      else if (keys.some(k => k.includes("page")||k.includes("views")||k.includes("screen"))) setPageData(rows);
-      setUploadedAt(new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}));
+      const date = new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+      if (keys.some(k => k.includes("query")||k.includes("search term")||k.includes("click"))) {
+        onLoad(rows, pageData, date);
+      } else {
+        onLoad(keywordData, rows, date);
+      }
     };
     reader.readAsText(file);
   };
@@ -1021,11 +1026,18 @@ export default function Dashboard({ initialInsights, initialCoverage, initialMet
   const [tab, setTab] = useState(0);
   const tabs = ["📊 Pulse","🧭 Narrative","⚔️ Competitive","🎯 Action","🧠 AI Insights","📰 Tier 1 Coverage","📈 Brand Awareness"];
 
-  // Shared Meltwater state — uploaded once in Tier 1, used in Pulse
-  const [mwData, setMwData]   = useState<any[]>([]);
-  const [mwDate, setMwDate]   = useState<string|null>(null);
-  const handleMwLoad = (rows: any[], date: string) => { setMwData(rows); setMwDate(date); };
+  // Shared Meltwater state— uploaded once in Tier 1, used in Pulse
+const [mwData, setMwData] = useState<any[]>([]);
+const [mwDate, setMwDate] = useState<string|null>(null);
+const handleMwLoad = (rows: any[], date: string) => { setMwData(rows); setMwDate(date); };
 
+// Shared GA4 state
+const [keywordData, setKeywordData] = useState<any[]>([]);
+const [pageData,    setPageData]    = useState<any[]>([]);
+const [ga4Date,     setGa4Date]     = useState<string|null>(null);
+const handleGA4Load = (keywords: any[], pages: any[], date: string) => {
+  setKeywordData(keywords); setPageData(pages); setGa4Date(date);
+};
   return (
     <div style={{ background:DARK, minHeight:"100vh", fontFamily:"'Inter',-apple-system,sans-serif", color:TEXT }}>
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
@@ -1052,8 +1064,8 @@ export default function Dashboard({ initialInsights, initialCoverage, initialMet
         {tab===2 && <CompetitiveModule />}
         {tab===3 && <ActionModule coverage={initialCoverage||[]} />}
         {tab===4 && <AIInsightsModule initialInsights={initialInsights} generatedAt={generatedAt} weekNumber={weekNumber} />}
-        {tab===5 && <Tier1Module onMeltwaterLoad={handleMwLoad} />}
-        {tab===6 && <BrandAwarenessModule />}
+        {tab===5 && <Tier1Module onMeltwaterLoad={handleMwLoad} mwRows={mwData} uploadedAt={mwDate} />}
+        {tab===6 && <BrandAwarenessModule keywordData={keywordData} pageData={pageData} uploadedAt={ga4Date} onLoad={handleGA4Load} />}
       </div>
     </div>
   );
