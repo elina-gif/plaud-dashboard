@@ -400,16 +400,131 @@ function JournalistTracker({ coverage }: { coverage: any[] }) {
 
 // ─── Pulse ───────────────────────────────────────────────────
 function PulseModule({ metrics }: { metrics: any }) {
+  const [mwData,     setMwData]     = useState<any[]>([]);
+  const [mwDate,     setMwDate]     = useState<string|null>(null);
+  const [mwDragging, setMwDragging] = useState(false);
+
+  // 解析 Meltwater CSV
+  const parseMeltwater = (text: string): any[] => {
+    const lines = text.split("\n").map(l => l.trim()).filter(l => l);
+    if (lines.length < 2) return [];
+    const headers = lines[0].split("\t").map(h => h.replace(/"/g, "").trim());
+    // Meltwater 有时用 tab，有时用逗号
+    const sep = headers.length > 3 ? "\t" : ",";
+    const hdrs = lines[0].split(sep).map(h => h.replace(/"/g, "").trim());
+    return lines.slice(1).map(line => {
+      const vals = line.split(sep).map(v => v.replace(/"/g, "").trim());
+      const obj: any = {};
+      hdrs.forEach((h, i) => { obj[h] = vals[i] || ""; });
+      return obj;
+    });
+  };
+
+  const handleMwFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target?.result as string;
+      const rows = parseMeltwater(text);
+      if (!rows.length) return;
+      setMwData(rows);
+      setMwDate(new Date().toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" }));
+    };
+    reader.readAsText(file);
+  };
+
+  // 计算真实指标
+  const totalMentions  = mwData.length;
+  const tier1Articles  = mwData.filter(r => {
+    const reach = parseFloat(r.Reach || r.reach || "0") || 0;
+    const type  = (r["Source Type"] || r["source type"] || r.SourceType || "").toLowerCase();
+    return type.includes("online") && reach >= 1000000;
+  });
+  const sentiments     = mwData.map(r => (r.Sentiment || r.sentiment || "").toLowerCase());
+  const posCount       = sentiments.filter(s => s.includes("pos")).length;
+  const negCount       = sentiments.filter(s => s.includes("neg")).length;
+  const neutralCount   = sentiments.filter(s => s.includes("neu")).length;
+  const sentimentScore = totalMentions > 0
+    ? ((posCount * 10 + neutralCount * 5) / (totalMentions * 10) * 10).toFixed(1)
+    : null;
+  const posRatio       = totalMentions > 0 ? Math.round((posCount / totalMentions) * 100) : 0;
+
+  // 显示值
+  const displayMentions  = mwData.length > 0 ? String(totalMentions)          : (metrics ? String(metrics.totalMentions) : "284");
+  const displayTier1     = mwData.length > 0 ? String(tier1Articles.length)   : (metrics ? String(metrics.tier1Count)    : "38");
+  const displaySentiment = mwData.length > 0 ? `${sentimentScore}/10`         : "7.2/10";
+  const displaySOV       = metrics ? `${metrics.shareOfVoice}%`               : "12%";
+  const displayPos       = mwData.length > 0 ? `${posRatio}%`                 : (metrics ? `${metrics.positiveRatio}%` : "46%");
+
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      {/* Meltwater Upload */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div>
+            <div style={{ color: TEXT, fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>Meltwater Weekly Data</div>
+            <div style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>
+              {mwDate ? `Last uploaded: ${mwDate} · ${totalMentions} mentions loaded` : "Upload Meltwater CSV to see real mention data"}
+            </div>
+          </div>
+          {mwData.length > 0 && (
+            <div style={{ display:"flex", gap:8 }}>
+              <div style={{ background:"#10b98122", border:"1px solid #10b98144", borderRadius:8, padding:"4px 12px", color:"#10b981", fontSize:11, fontWeight:700 }}>{posCount} Positive</div>
+              <div style={{ background:"#f43f5e22", border:"1px solid #f43f5e44", borderRadius:8, padding:"4px 12px", color:"#f43f5e",  fontSize:11, fontWeight:700 }}>{negCount} Negative</div>
+              <div style={{ background:BORDER,       border:`1px solid ${BORDER}`,   borderRadius:8, padding:"4px 12px", color:MUTED,      fontSize:11, fontWeight:700 }}>{neutralCount} Neutral</div>
+            </div>
+          )}
+        </div>
+
+        {/* How to export */}
+        <div style={{ marginBottom:12, padding:"8px 12px", background:"#13151f", border:`1px solid ${BORDER}`, borderRadius:8, fontSize:11, color:MUTED, lineHeight:1.8 }}>
+          <div style={{ color:TEXT, fontWeight:600, marginBottom:4 }}>How to export from Meltwater:</div>
+          <div>1. Open Meltwater → Search <strong style={{color:ACCENT}}>"Plaud"</strong> → Set date to <strong style={{color:ACCENT}}>Last 7 days</strong></div>
+          <div>2. Click <strong style={{color:CYAN}}>Export</strong> → Select <strong style={{color:CYAN}}>CSV</strong> → Download</div>
+          <div>3. Drag the file below</div>
+        </div>
+
+        {/* Drop zone */}
+        <div
+          onDragOver={e=>{e.preventDefault();setMwDragging(true);}}
+          onDragLeave={()=>setMwDragging(false)}
+          onDrop={e=>{e.preventDefault();setMwDragging(false);Array.from(e.dataTransfer.files).forEach(handleMwFile);}}
+          onClick={()=>document.getElementById("mw-input")?.click()}
+          style={{ border:`2px dashed ${mwDragging?ACCENT:BORDER}`, borderRadius:10, padding:"18px 20px", textAlign:"center", background:mwDragging?ACCENT+"11":"#13151f", transition:"all 0.15s", cursor:"pointer" }}
+        >
+          <div style={{ fontSize:24, marginBottom:6 }}>📊</div>
+          <div style={{ color:TEXT, fontSize:12, fontWeight:600, marginBottom:2 }}>Drop Meltwater CSV here or click to upload</div>
+          <div style={{ color:MUTED, fontSize:11 }}>Supports the standard Meltwater export format</div>
+          <input id="mw-input" type="file" accept=".csv" style={{ display:"none" }} onChange={e=>Array.from(e.target.files||[]).forEach(handleMwFile)} />
+        </div>
+      </Card>
+
+      {/* 6 Metric Tiles */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
-        <MetricTile label="Weekly Mentions"       value={metrics?String(metrics.totalMentions):"284"} trend="up"   sub="vs 201 last week" />
-        <MetricTile label="Tier-1 Coverage"       value={metrics?String(metrics.tier1Count):"38"}     trend="up"   sub="+41% MoM"         />
-        <MetricTile label="Sentiment Score"       value="7.2/10"                                       trend="up"   sub="+0.4 pts"         />
-        <MetricTile label="Share of Voice"        value={metrics?`${metrics.shareOfVoice}%`:"12%"}    trend="down" sub="vs 14% last week" />
-        <MetricTile label="Exec Quotes Picked Up" value="9"                                            trend="up"   sub="across 6 outlets" />
-        <MetricTile label="Narrative Match %"     value={metrics?`${metrics.positiveRatio}%`:"46%"}   trend="up"   sub="AI Work Companion" />
+        <div style={{ background:"#13151f", border:`1px solid ${mwData.length?ACCENT+"55":BORDER}`, borderRadius:10, padding:"14px 16px" }}>
+          <div style={{ color:MUTED, fontSize:11, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>Weekly Mentions</div>
+          <div style={{ color:TEXT, fontSize:22, fontWeight:800 }}>{displayMentions}</div>
+          <div style={{ color:mwData.length?"#10b981":MUTED, fontSize:11, marginTop:2 }}>{mwData.length?"▲ From Meltwater":"⚠ Sample data — upload CSV"}</div>
+        </div>
+        <div style={{ background:"#13151f", border:`1px solid ${mwData.length?ACCENT+"55":BORDER}`, borderRadius:10, padding:"14px 16px" }}>
+          <div style={{ color:MUTED, fontSize:11, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>Tier-1 Coverage</div>
+          <div style={{ color:TEXT, fontSize:22, fontWeight:800 }}>{displayTier1}</div>
+          <div style={{ color:"#10b981", fontSize:11, marginTop:2 }}>▲ Auto from RSS</div>
+        </div>
+        <div style={{ background:"#13151f", border:`1px solid ${mwData.length?ACCENT+"55":BORDER}`, borderRadius:10, padding:"14px 16px" }}>
+          <div style={{ color:MUTED, fontSize:11, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>Sentiment Score</div>
+          <div style={{ color:TEXT, fontSize:22, fontWeight:800 }}>{displaySentiment}</div>
+          <div style={{ color:mwData.length?"#10b981":MUTED, fontSize:11, marginTop:2 }}>{mwData.length?`${posRatio}% positive`:"⚠ Sample data — upload CSV"}</div>
+        </div>
+        <MetricTile label="Share of Voice"        value={displaySOV}  trend="down" sub="vs 14% last week" />
+        <MetricTile label="Exec Quotes Picked Up" value="9"           trend="up"   sub="across 6 outlets — update manually" />
+        <div style={{ background:"#13151f", border:`1px solid ${mwData.length?ACCENT+"55":BORDER}`, borderRadius:10, padding:"14px 16px" }}>
+          <div style={{ color:MUTED, fontSize:11, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>Narrative Match %</div>
+          <div style={{ color:TEXT, fontSize:22, fontWeight:800 }}>{displayPos}</div>
+          <div style={{ color:mwData.length?"#10b981":MUTED, fontSize:11, marginTop:2 }}>{mwData.length?"▲ From Meltwater":"⚠ Sample data — upload CSV"}</div>
+        </div>
       </div>
+
+      {/* Charts */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Card>
           <CardTitle sub="Weekly mentions vs competitors">Media Coverage Trend</CardTitle>
@@ -418,8 +533,8 @@ function PulseModule({ metrics }: { metrics: any }) {
               <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
               <XAxis dataKey="week" stroke={MUTED} fontSize={11} />
               <YAxis stroke={MUTED} fontSize={11} />
-              <Tooltip contentStyle={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8 }} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Tooltip contentStyle={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:8 }} />
+              <Legend wrapperStyle={{ fontSize:11 }} />
               <Line type="monotone" dataKey="plaud"      stroke={ACCENT}  strokeWidth={2.5} dot={false} name="Plaud"      />
               <Line type="monotone" dataKey="otter"      stroke={CYAN}    strokeWidth={1.5} dot={false} name="Otter.ai"   />
               <Line type="monotone" dataKey="notion"     stroke="#f59e0b" strokeWidth={1.5} dot={false} name="Notion AI"  />
@@ -431,9 +546,9 @@ function PulseModule({ metrics }: { metrics: any }) {
           <CardTitle sub="PR contribution to business">Business Impact Metrics</CardTitle>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {businessMetrics.map(m => (
-              <div key={m.metric} style={{ background: "#13151f", borderRadius: 8, padding: "10px 12px", border: `1px solid ${BORDER}` }}>
-                <div style={{ color: MUTED, fontSize: 10, textTransform: "uppercase" }}>{m.metric}</div>
-                <div style={{ color: m.trend==="up"?"#10b981":"#f43f5e", fontSize: 18, fontWeight: 700, marginTop: 2 }}>{m.value}</div>
+              <div key={m.metric} style={{ background:"#13151f", borderRadius:8, padding:"10px 12px", border:`1px solid ${BORDER}` }}>
+                <div style={{ color:MUTED, fontSize:10, textTransform:"uppercase" }}>{m.metric}</div>
+                <div style={{ color:m.trend==="up"?"#10b981":"#f43f5e", fontSize:18, fontWeight:700, marginTop:2 }}>{m.value}</div>
               </div>
             ))}
           </div>
@@ -442,7 +557,6 @@ function PulseModule({ metrics }: { metrics: any }) {
     </div>
   );
 }
-
 // ─── Narrative ───────────────────────────────────────────────
 function NarrativeModule() {
   const [topics, setTopics] = useState(defaultTopics);
