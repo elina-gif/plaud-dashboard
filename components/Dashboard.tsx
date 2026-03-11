@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -703,10 +702,261 @@ function Tier1Module({ coverage }: { coverage: any[] }) {
   );
 }
 
+// ─── 模块：Brand Awareness ───────────────────────────────────
+function BrandAwarenessModule() {
+  const [keywordData, setKeywordData] = useState<any[]>([]);
+  const [pageData,    setPageData]    = useState<any[]>([]);
+  const [uploadedAt,  setUploadedAt]  = useState<string|null>(null);
+  const [dragging,    setDragging]    = useState(false);
+
+  const parseCSV = (text: string): any[] => {
+    const lines = text.trim().split("\n").filter(l => l.trim());
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, ""));
+    return lines.slice(1).map(line => {
+      const vals = line.split(",").map(v => v.trim().replace(/"/g, ""));
+      const obj: any = {};
+      headers.forEach((h, i) => obj[h] = vals[i] || "");
+      return obj;
+    });
+  };
+
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target?.result as string;
+      const rows = parseCSV(text);
+      if (!rows.length) return;
+      const keys = Object.keys(rows[0]).map(k => k.toLowerCase());
+      if (keys.some(k => k.includes("query") || k.includes("clicks"))) {
+        setKeywordData(rows);
+      } else if (keys.some(k => k.includes("page") || k.includes("views") || k.includes("screen"))) {
+        setPageData(rows);
+      }
+      setUploadedAt(new Date().toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" }));
+    };
+    reader.readAsText(file);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    Array.from(e.dataTransfer.files).forEach(handleFile);
+  };
+
+  const hasData = keywordData.length > 0 || pageData.length > 0;
+
+  // 品牌关键词 vs 非品牌关键词分类
+  const brandKeywords    = keywordData.filter(r => (r.Query||r.query||"").toLowerCase().includes("plaud") || (r.Query||r.query||"").toLowerCase().includes("notepin"));
+  const nonBrandKeywords = keywordData.filter(r => !(r.Query||r.query||"").toLowerCase().includes("plaud") && !(r.Query||r.query||"").toLowerCase().includes("notepin"));
+  const totalBrandClicks = brandKeywords.reduce((s,r) => s + (parseInt(r.Clicks||r.clicks||"0")||0), 0);
+  const totalBrandImpressions = brandKeywords.reduce((s,r) => s + (parseInt(r.Impressions||r.impressions||"0")||0), 0);
+
+  // 图表数据
+  const keywordChart = keywordData.slice(0, 10).map(r => ({
+    name: (r.Query||r.query||"").length > 20 ? (r.Query||r.query||"").slice(0,18)+"…" : (r.Query||r.query||""),
+    clicks: parseInt(r.Clicks||r.clicks||"0")||0,
+    impressions: parseInt(r.Impressions||r.impressions||"0")||0,
+    isBrand: (r.Query||r.query||"").toLowerCase().includes("plaud") || (r.Query||r.query||"").toLowerCase().includes("notepin"),
+  }));
+  const pageChart = pageData.slice(0, 8).map(r => ({
+    name: (r["Page path and screen class"]||r["Page path"]||r.page||"").replace("https://www.plaud.ai","").slice(0,25)||"/",
+    views: parseInt(r.Views||r.views||r["Screen views"]||"0")||0,
+    users: parseInt(r.Users||r.users||"0")||0,
+  }));
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      {/* Upload Zone */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div>
+            <div style={{ color: TEXT, fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>Brand Awareness — GA4 Weekly Data</div>
+            <div style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>
+              {uploadedAt ? `Last uploaded: ${uploadedAt}` : "Upload your weekly GA4 CSV exports below"}
+            </div>
+          </div>
+          {hasData && (
+            <div style={{ display:"flex", gap:8 }}>
+              <div style={{ background:"#10b98122", border:"1px solid #10b98144", borderRadius:8, padding:"6px 14px", color:"#10b981", fontSize:11, fontWeight:700 }}>
+                Brand Clicks: {totalBrandClicks.toLocaleString()}
+              </div>
+              <div style={{ background: ACCENT+"22", border:`1px solid ${ACCENT}44`, borderRadius:8, padding:"6px 14px", color:ACCENT, fontSize:11, fontWeight:700 }}>
+                Brand Impressions: {totalBrandImpressions.toLocaleString()}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Drop zone */}
+        <div
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          onClick={() => document.getElementById("csv-input")?.click()}
+          style={{ border:`2px dashed ${dragging?ACCENT:BORDER}`, borderRadius:10, padding:"24px 20px", textAlign:"center", background: dragging?ACCENT+"11":"#13151f", transition:"all 0.15s", cursor:"pointer" }}
+        >
+          <div style={{ fontSize:28, marginBottom:8 }}>📂</div>
+          <div style={{ color:TEXT, fontSize:13, fontWeight:600, marginBottom:4 }}>Drop CSV files here or click to upload</div>
+          <div style={{ color:MUTED, fontSize:11 }}>
+            Upload <strong style={{color:CYAN}}>ga4-keywords.csv</strong> (Search Console Queries) and <strong style={{color:ACCENT}}>ga4-pages.csv</strong> (Pages & Screens)
+          </div>
+          <input id="csv-input" type="file" accept=".csv" multiple style={{ display:"none" }}
+            onChange={e => Array.from(e.target.files||[]).forEach(handleFile)} />
+        </div>
+
+        {/* Status pills */}
+        <div style={{ display:"flex", gap:10, marginTop:10 }}>
+          <div style={{ flex:1, background:"#13151f", border:`1px solid ${keywordData.length?CYAN+"55":BORDER}`, borderRadius:8, padding:"8px 12px", fontSize:11 }}>
+            <span style={{ color:keywordData.length?"#10b981":MUTED }}>{keywordData.length?"✓":"○"}</span>
+            <span style={{ color:MUTED, marginLeft:6 }}>Keywords CSV</span>
+            {keywordData.length>0 && <span style={{ color:CYAN, marginLeft:6 }}>{keywordData.length} queries loaded</span>}
+          </div>
+          <div style={{ flex:1, background:"#13151f", border:`1px solid ${pageData.length?ACCENT+"55":BORDER}`, borderRadius:8, padding:"8px 12px", fontSize:11 }}>
+            <span style={{ color:pageData.length?"#10b981":MUTED }}>{pageData.length?"✓":"○"}</span>
+            <span style={{ color:MUTED, marginLeft:6 }}>Pages CSV</span>
+            {pageData.length>0 && <span style={{ color:ACCENT, marginLeft:6 }}>{pageData.length} pages loaded</span>}
+          </div>
+        </div>
+      </Card>
+
+      {/* Empty state */}
+      {!hasData && (
+        <Card>
+          <div style={{ textAlign:"center", padding:"32px 0", color:MUTED }}>
+            <div style={{ fontSize:36, marginBottom:12 }}>📊</div>
+            <div style={{ fontSize:13, fontWeight:600, marginBottom:6, color:TEXT }}>No data uploaded yet</div>
+            <div style={{ fontSize:12, marginBottom:4 }}>Export from GA4 → Reports → Acquisition → Search Console → Queries</div>
+            <div style={{ fontSize:12 }}>and GA4 → Reports → Engagement → Pages and screens</div>
+          </div>
+        </Card>
+      )}
+
+      {hasData && (
+        <>
+          {/* Summary tiles */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
+            <MetricTile label="Brand Queries"       value={String(brandKeywords.length)}              sub="plaud / notepin terms" />
+            <MetricTile label="Brand Clicks"        value={totalBrandClicks.toLocaleString()}         trend="up" sub="past 28 days" />
+            <MetricTile label="Brand Impressions"   value={totalBrandImpressions.toLocaleString()}    trend="up" sub="past 28 days" />
+            <MetricTile label="Non-Brand Queries"   value={String(nonBrandKeywords.length)}           sub="category keywords" />
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+            {/* Keyword chart */}
+            {keywordChart.length>0 && (
+              <Card>
+                <CardTitle sub="Clicks vs Impressions — brand keywords highlighted in purple">Search Query Performance</CardTitle>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={keywordChart}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                    <XAxis dataKey="name" stroke={MUTED} fontSize={9} angle={-20} textAnchor="end" height={50} />
+                    <YAxis stroke={MUTED} fontSize={10} />
+                    <Tooltip contentStyle={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:8 }} />
+                    <Legend wrapperStyle={{ fontSize:11 }} />
+                    <Bar dataKey="clicks"      name="Clicks"      radius={[3,3,0,0]}>
+                      {keywordChart.map((entry,i) => <Cell key={i} fill={entry.isBrand?ACCENT:MUTED} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            )}
+
+            {/* Top Pages chart */}
+            {pageChart.length>0 && (
+              <Card>
+                <CardTitle sub="Top pages by views — past 28 days">Top Pages</CardTitle>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={pageChart} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                    <XAxis type="number" stroke={MUTED} fontSize={10} />
+                    <YAxis type="category" dataKey="name" stroke={MUTED} fontSize={9} width={110} />
+                    <Tooltip contentStyle={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:8 }} />
+                    <Legend wrapperStyle={{ fontSize:11 }} />
+                    <Bar dataKey="views" fill={CYAN}    name="Views" radius={[0,4,4,0]} />
+                    <Bar dataKey="users" fill={ACCENT}  name="Users" radius={[0,4,4,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            )}
+          </div>
+
+          {/* Keyword detail table */}
+          {keywordData.length>0 && (
+            <Card>
+              <CardTitle sub="Full brand keyword breakdown">Search Query Details</CardTitle>
+              <div style={{ overflowX:"auto" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+                  <thead>
+                    <tr style={{ borderBottom:`1px solid ${BORDER}` }}>
+                      {["Query","Clicks","Impressions","CTR","Avg. Position","Type"].map(h => (
+                        <th key={h} style={{ color:MUTED, padding:"6px 10px", textAlign:h==="Query"?"left":"center", fontWeight:600 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {keywordData.slice(0,15).map((r,i) => {
+                      const isBrand = (r.Query||r.query||"").toLowerCase().includes("plaud")||(r.Query||r.query||"").toLowerCase().includes("notepin");
+                      return (
+                        <tr key={i} style={{ borderBottom:`1px solid ${BORDER}22`, background: isBrand?ACCENT+"08":"transparent" }}>
+                          <td style={{ color:TEXT,   padding:"8px 10px", fontWeight:600 }}>{r.Query||r.query}</td>
+                          <td style={{ color:ACCENT, padding:"8px 10px", textAlign:"center", fontWeight:700 }}>{r.Clicks||r.clicks}</td>
+                          <td style={{ color:MUTED,  padding:"8px 10px", textAlign:"center" }}>{r.Impressions||r.impressions}</td>
+                          <td style={{ color:CYAN,   padding:"8px 10px", textAlign:"center" }}>{r.CTR||r.ctr}</td>
+                          <td style={{ color:TEXT,   padding:"8px 10px", textAlign:"center" }}>{r.Position||r.position}</td>
+                          <td style={{ padding:"8px 10px", textAlign:"center" }}>
+                            <span style={{ background:isBrand?ACCENT+"33":"#2a2d3a", color:isBrand?ACCENT:MUTED, borderRadius:4, padding:"2px 8px", fontSize:10, fontWeight:600 }}>
+                              {isBrand?"Brand":"Non-Brand"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+
+          {/* Top pages table */}
+          {pageData.length>0 && (
+            <Card>
+              <CardTitle sub="Top 10 pages by views">Page Performance Details</CardTitle>
+              <div style={{ overflowX:"auto" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+                  <thead>
+                    <tr style={{ borderBottom:`1px solid ${BORDER}` }}>
+                      {["Page","Views","Users","Avg. Engagement Time"].map(h => (
+                        <th key={h} style={{ color:MUTED, padding:"6px 10px", textAlign:h==="Page"?"left":"center", fontWeight:600 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageData.slice(0,10).map((r,i) => (
+                      <tr key={i} style={{ borderBottom:`1px solid ${BORDER}22` }}>
+                        <td style={{ color:CYAN,   padding:"8px 10px", fontWeight:600, fontSize:11 }}>
+                          {(r["Page path and screen class"]||r["Page path"]||r.page||"/").replace("https://www.plaud.ai","")}
+                        </td>
+                        <td style={{ color:ACCENT, padding:"8px 10px", textAlign:"center", fontWeight:700 }}>{(parseInt(r.Views||r.views||"0")||0).toLocaleString()}</td>
+                        <td style={{ color:TEXT,   padding:"8px 10px", textAlign:"center" }}>{(parseInt(r.Users||r.users||"0")||0).toLocaleString()}</td>
+                        <td style={{ color:MUTED,  padding:"8px 10px", textAlign:"center" }}>{r["Average engagement time"]||r["Avg. engagement time"]||"—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── 主组件 ──────────────────────────────────────────────────
 export default function Dashboard({ initialInsights, initialCoverage, initialMetrics, generatedAt, weekNumber }: DashboardProps) {
   const [tab, setTab] = useState(0);
-  const tabs = ["📊 Pulse","🧭 Narrative","⚔️ Competitive","🎯 Action","🧠 AI Insights","📰 Tier 1 Coverage"];
+  const tabs = ["📊 Pulse","🧭 Narrative","⚔️ Competitive","🎯 Action","🧠 AI Insights","📰 Tier 1 Coverage","📈 Brand Awareness"];
 
   return (
     <div style={{ background: DARK, minHeight: "100vh", fontFamily: "'Inter',-apple-system,sans-serif", color: TEXT }}>
@@ -735,6 +985,7 @@ export default function Dashboard({ initialInsights, initialCoverage, initialMet
         {tab===3 && <ActionModule />}
         {tab===4 && <AIInsightsModule initialInsights={initialInsights} generatedAt={generatedAt} weekNumber={weekNumber} />}
         {tab===5 && <Tier1Module coverage={initialCoverage||[]} />}
+        {tab===6 && <BrandAwarenessModule />}
       </div>
     </div>
   );
