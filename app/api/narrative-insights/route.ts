@@ -40,6 +40,10 @@ Search the web for the LATEST AI industry research and market reports from the p
 4. Regional differences in AI adoption (US, Asia, Europe)
 5. Key statistics and findings from major reports (McKinsey, Gartner, IDC, Stanford HAI, etc.)
 
+IMPORTANT: 
+- Write all findings as plain text. Do NOT include any XML tags, cite tags, or HTML in the text.
+- For each report, include the actual URL of the source if available.
+
 Return ONLY raw JSON (no markdown, no code fences):
 {
   "generatedAt": "${now}",
@@ -48,14 +52,15 @@ Return ONLY raw JSON (no markdown, no code fences):
     {
       "title": "report or finding title",
       "source": "source name",
+      "url": "actual URL of the report or article, or empty string if not available",
       "date": "month year",
-      "keyFinding": "the most relevant finding in 1-2 sentences",
-      "relevanceToPlaud": "why this matters for Plaud's positioning in 1 sentence",
+      "keyFinding": "the most relevant finding in 1-2 sentences, plain text only",
+      "relevanceToPlaud": "why this matters for Plaud's positioning in 1 sentence, plain text only",
       "category": "Enterprise AI | Consumer AI | AI Hardware | Regional Trends"
     }
   ],
-  "bigPicture": "2-3 sentence synthesis of what all this means for AI work companion positioning",
-  "plaudOpportunity": "1-2 sentences on the biggest opportunity for Plaud based on these trends"
+  "bigPicture": "2-3 sentence synthesis, plain text only",
+  "plaudOpportunity": "1-2 sentences, plain text only"
 }
 Include 6-8 reports/findings.`;
 
@@ -67,6 +72,10 @@ Search the web for the most influential AI thought leader opinions and viral quo
 3. Hot debates or controversies in AI (e.g. AI replacing jobs, privacy, ambient AI)
 4. Viral LinkedIn/X posts or articles about AI work habits
 
+IMPORTANT:
+- Write all text as plain text. Do NOT include any XML tags, cite tags, or HTML.
+- Include the actual URL where the quote or opinion was published.
+
 Return ONLY raw JSON (no markdown, no code fences):
 {
   "generatedAt": "${now}",
@@ -74,15 +83,16 @@ Return ONLY raw JSON (no markdown, no code fences):
     {
       "name": "person name",
       "title": "their role/title",
-      "quote": "their key statement or position (paraphrased if needed)",
+      "quote": "their key statement or position, plain text only",
       "source": "where they said it (X, LinkedIn, interview, etc.)",
+      "url": "actual URL of the source, or empty string if not available",
       "date": "approximate date",
       "topic": "what topic this is about",
-      "relevanceToPlaud": "how Plaud can respond to or leverage this in 1 sentence",
+      "relevanceToPlaud": "how Plaud can respond to or leverage this, plain text only",
       "sentiment": "opportunity | risk | neutral"
     }
   ],
-  "hotDebate": "1-2 sentences on the biggest AI debate happening right now that Plaud should have a POV on"
+  "hotDebate": "1-2 sentences on the biggest AI debate right now, plain text only"
 }
 Include 6-8 thought leaders.`;
 
