@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -184,10 +185,10 @@ function NarrativeOwnershipCard() {
       <div style={{ color: MUTED, fontSize: 11, marginBottom: 10 }}>Current vs target narrative penetration</div>
 
       {/* 打分说明 */}
-      <div style={{ marginBottom: 16, padding: "8px 12px", background: "#13151f", border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 11, color: MUTED, lineHeight: 1.8 }}>
-        <div><span style={{ color: ACCENT, fontWeight: 600 }}>Current %</span> = 媒体数据（50%）+ 团队判断（50%）综合评分，每季度更新</div>
-        <div><span style={{ color: MUTED, fontWeight: 600 }}>Target %</span> &nbsp;= 品牌团队本季度设定的目标覆盖率，每季度更新</div>
-        <div style={{ marginTop: 4, color: "#f59e0b", fontSize: 10 }}>💡 点击任意数字可直接编辑</div>
+              <div style={{ marginBottom: 16, padding: "8px 12px", background: "#13151f", border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 11, color: MUTED, lineHeight: 1.8 }}>
+        <div><span style={{ color: ACCENT, fontWeight: 600 }}>Current %</span> = Media data (50%) + Team assessment (50%) — updated each quarter</div>
+        <div><span style={{ color: MUTED, fontWeight: 600 }}>Target %</span> &nbsp;= Brand team's quarterly goal, set and updated each quarter</div>
+        <div style={{ marginTop: 4, color: "#f59e0b", fontSize: 10 }}>💡 Click any number to edit directly</div>
       </div>
 
       {/* 每行数据 */}
@@ -227,7 +228,7 @@ function NarrativeOwnershipCard() {
             </div>
             {/* 达标提示 */}
             <div style={{ marginTop: 4, fontSize: 10, color: row.current>=row.target?"#10b981":"#f59e0b" }}>
-              {row.current>=row.target ? `✓ 已达标（超出目标 ${row.current-row.target}%）` : `△ 距目标还差 ${row.target-row.current}%`}
+              {row.current>=row.target ? `✓ On track (${row.current-row.target}% above target)` : `△ ${row.target-row.current}% below target`}
             </div>
           </div>
         ))}
@@ -329,11 +330,11 @@ function NarrativeModule() {
           <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6, background: "#13151f", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "6px 12px" }}>
             <span style={{ color: "#10b981", fontSize: 11, fontWeight: 700 }}>IN</span>
             <span style={{ color: MUTED, fontSize: 11 }}>=</span>
-            <span style={{ color: MUTED, fontSize: 11 }}>Plaud 已主动发布该话题相关内容（pitch / 文章 / 声明）</span>
+            <span style={{ color: MUTED, fontSize: 11 }}>Plaud has actively published content on this topic (pitch / article / statement)</span>
             <span style={{ color: MUTED, fontSize: 11, margin: "0 4px" }}>·</span>
             <span style={{ color: "#f43f5e", fontSize: 11, fontWeight: 700 }}>OUT</span>
             <span style={{ color: MUTED, fontSize: 11 }}>=</span>
-            <span style={{ color: MUTED, fontSize: 11 }}>尚未覆盖，存在 pitch 机会</span>
+            <span style={{ color: MUTED, fontSize: 11 }}>Not yet covered — pitch opportunity</span>
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
@@ -359,7 +360,7 @@ function NarrativeModule() {
               </div>
               {t.plaudIn ? (
                 <input
-                  placeholder="填写依据，如：Forbes pitch on AI Work Companion"
+                  placeholder="Add evidence, e.g. Forbes pitch on AI Work Companion"
                   defaultValue={t.evidence}
                   onBlur={e => {
                     const updated = [...topics];
