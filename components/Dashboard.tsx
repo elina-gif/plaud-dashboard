@@ -581,7 +581,7 @@ function NarrativeModule() {
 
   return (
     <div style={{display:"grid",gap:16}}>
-      <NarrativeOwnershipCard />
+    
 
       {/* Industry Insights */}
       <Card>
@@ -715,7 +715,7 @@ function NarrativeModule() {
 // ─── Competitive ─────────────────────────────────────────────
 function CompetitiveModule() {
   return (
-    <div style={{display:"grid",gap:16}}>
+    <div style={{display:"grid",gap:16}}><NarrativeOwnershipCard />
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
         <Card>
           <CardTitle sub="Plaud vs Otter.ai across PR dimensions">Competitive Radar</CardTitle>
