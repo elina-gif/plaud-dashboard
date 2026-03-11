@@ -1,14 +1,39 @@
 import { NextResponse } from "next/server";
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv();
 
 export async function POST(req: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "Missing API key" }, { status: 500 });
 
-  // 安全解析 body，兼容空 body 和 JSON body
   let body: any = {};
   try {
     const text = await req.text();
     if (text) body = JSON.parse(text);
+  } catch {}
+
+  // ── 从 Redis 读取真实的 Meltwater 数据 ──────────────────
+  let mwSummary = "No Meltwater data uploaded yet.";
+  try {
+    const mwRaw = await redis.get("meltwater") as string | null;
+    if (mwRaw) {
+      const mw = typeof mwRaw === "string" ? JSON.parse(mwRaw) : mwRaw;
+      const rows: any[] = mw.rows || [];
+      const date: string = mw.date || "";
+      const tier1 = rows.filter((r: any) => (r.reach || 0) >= 1000000);
+      const pos   = rows.filter((r: any) => (r.sentiment || "").includes("pos")).length;
+      const neg   = rows.filter((r: any) => (r.sentiment || "").includes("neg")).length;
+      const outlets = [...new Set(tier1.map((r: any) => r.outlet).filter(Boolean))].slice(0, 10).join(", ");
+      const topTitles = tier1.slice(0, 5).map((r: any) => `"${r.title}" (${r.outlet}, reach: ${Number(r.reach).toLocaleString()})`).join("\n");
+      mwSummary = `Meltwater data uploaded on ${date}:
+- Total mentions: ${rows.length}
+- Tier 1 articles (Reach >1M): ${tier1.length}
+- Positive: ${pos}, Negative: ${neg}, Neutral: ${rows.length - pos - neg}
+- Tier 1 outlets covered: ${outlets || "none"}
+- Top Tier 1 articles:
+${topTitles || "none"}`;
+    }
   } catch {}
 
   // ── 模式 1：记者 Pitch 推荐 ──────────────────────────────
@@ -61,8 +86,8 @@ Return ONLY a raw JSON array (no markdown, no code fences) with this exact struc
     }
   }
 
-  // ── 模式 2：标准 Weekly Brief ────────────────────────────
-  const prompt = `Analyze Plaud AI's PR performance this week.
+  // ── 模式 2：标准 Weekly Brief（使用真实数据）────────────
+  const prompt = `Analyze Plaud AI's PR performance this week based on REAL data.
 
 BRAND CONTEXT:
 - Mission: Amplify Human Intelligence
@@ -72,14 +97,14 @@ BRAND CONTEXT:
 - Key outlets missing: Bloomberg, CNBC
 - Competitors: Otter.ai ($100M ARR, enterprise push), Notion AI, reMarkable
 
-THIS WEEK'S SIGNALS:
-- Plaud CES 2026 coverage still generating long-tail pickup
-- Humane AI negative press cycle = opportunity to position Plaud as AI wearable that works
-- AI Work Companion narrative underpenetrated (38% vs 70% target)
+REAL MELTWATER DATA THIS WEEK:
+${mwSummary}
+
+Based on the REAL data above, provide an honest and accurate PR analysis. If there is real Tier 1 coverage, acknowledge it specifically. Do not say there is zero coverage if the data shows otherwise.
 
 Return ONLY raw JSON (no markdown, no code fences) with these exact keys:
-- summary: string (2-3 sentence executive brief)
-- insights: array of 4 strings
+- summary: string (2-3 sentence executive brief based on real data)
+- insights: array of 4 strings (based on real data)
 - actions: array of 5 strings
 - risk: string (1 sentence)
 - opportunity: string (1 sentence)`;
