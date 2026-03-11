@@ -705,14 +705,34 @@ function BrandAwarenessModule() {
   const [uploadedAt,  setUploadedAt]  = useState<string|null>(null);
   const [dragging,    setDragging]    = useState(false);
 
+  // GA4 列名标准化：把长列名映射为短列名
+  const normalizeRow = (row: any): any => {
+    const out: any = {};
+    for (const [k, v] of Object.entries(row)) {
+      const kl = k.toLowerCase();
+      if (kl.includes("query") || kl.includes("search term"))        out["Query"]       = v;
+      else if (kl.includes("click") && !kl.includes("rate"))         out["Clicks"]      = v;
+      else if (kl.includes("impression"))                             out["Impressions"] = v;
+      else if (kl.includes("rate") || kl.includes("ctr"))            out["CTR"]         = v;
+      else if (kl.includes("position") || kl.includes("average"))    out["Position"]    = v;
+      else if (kl.includes("page") || kl.includes("screen class"))   out["Page"]        = v;
+      else if (kl.includes("view"))                                   out["Views"]       = v;
+      else if (kl.includes("user"))                                   out["Users"]       = v;
+      else if (kl.includes("engagement") || kl.includes("time"))     out["Avg. Engagement Time"] = v;
+      else out[k] = v;
+    }
+    return out;
+  };
+
   const handleFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = e => {
       const text = e.target?.result as string;
-      const rows = parseGA4CSV(text);
-      if (!rows.length) return;
-      const keys = Object.keys(rows[0]).map(k => k.toLowerCase());
-      if (keys.some(k => k.includes("query") || k.includes("clicks"))) {
+      const rawRows = parseGA4CSV(text);
+      if (!rawRows.length) return;
+      const rows = rawRows.map(normalizeRow);
+      const keys = Object.keys(rawRows[0]).map(k => k.toLowerCase());
+      if (keys.some(k => k.includes("query") || k.includes("search term") || k.includes("click"))) {
         setKeywordData(rows);
       } else if (keys.some(k => k.includes("page") || k.includes("views") || k.includes("screen"))) {
         setPageData(rows);
