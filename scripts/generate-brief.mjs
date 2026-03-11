@@ -5,7 +5,7 @@ import fs   from "fs";
 import path from "path";
 import https from "https";
 
-const API_KEY = "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";
+const API_KEY = "";
 
 function callClaude(prompt) {
   return new Promise((resolve, reject) => {
