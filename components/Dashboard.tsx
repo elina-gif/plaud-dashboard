@@ -465,44 +465,198 @@ function PulseModule({ metrics, mwData, mwDate }: { metrics: any; mwData: any[];
 // ─── Narrative ───────────────────────────────────────────────
 function NarrativeModule() {
   const [topics, setTopics] = useState(defaultTopics);
-  const sentimentData = [
-    { name:"Positive", value:54, color:"#10b981" },
-    { name:"Neutral",  value:31, color:"#6366f1" },
-    { name:"Negative", value:15, color:"#f43f5e" },
-  ];
+
+  // Industry Insights state
+  const [industryData, setIndustryData] = useState<any>(null);
+  const [industryLoading, setIndustryLoading] = useState(true);
+
+  // Thought Leaders state
+  const [thoughtData, setThoughtData] = useState<any>(null);
+  const [thoughtLoading, setThoughtLoading] = useState(true);
+
+  // 页面加载时自动获取
+  useState(() => {
+    const fetchAll = async () => {
+      // Industry Insights
+      try {
+        const res = await fetch("/api/narrative-insights", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "industry" }),
+        });
+        const data = await res.json();
+        if (!data.error) setIndustryData(data);
+      } catch {}
+      setIndustryLoading(false);
+
+      // Thought Leaders
+      try {
+        const res = await fetch("/api/narrative-insights", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "thought" }),
+        });
+        const data = await res.json();
+        if (!data.error) setThoughtData(data);
+      } catch {}
+      setThoughtLoading(false);
+    };
+    fetchAll();
+  });
+
+  const refresh = async (mode: "industry" | "thought") => {
+    if (mode === "industry") setIndustryLoading(true);
+    else setThoughtLoading(true);
+    try {
+      const res = await fetch("/api/narrative-insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, forceRefresh: true }),
+      });
+      const data = await res.json();
+      if (!data.error) {
+        if (mode === "industry") setIndustryData(data);
+        else setThoughtData(data);
+      }
+    } catch {}
+    if (mode === "industry") setIndustryLoading(false);
+    else setThoughtLoading(false);
+  };
+
+  const sentimentColors: Record<string, string> = {
+    opportunity: "#10b981",
+    risk: "#f43f5e",
+    neutral: "#6366f1",
+  };
+  const categoryColors: Record<string, string> = {
+    "Enterprise AI": "#6366f1",
+    "Consumer AI":   "#22d3ee",
+    "AI Hardware":   "#f59e0b",
+    "Regional Trends": "#10b981",
+  };
+
   return (
     <div style={{ display:"grid", gap:16 }}>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-        <NarrativeOwnershipCard />
-        <Card>
-          <CardTitle sub="Media sentiment this week">Sentiment Breakdown</CardTitle>
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <ResponsiveContainer width="50%" height={180}>
-              <PieChart>
-                <Pie data={sentimentData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value">
-                  {sentimentData.map((e,i) => <Cell key={i} fill={e.color} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:8 }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ flex:1 }}>
-              {sentimentData.map(s => (
-                <div key={s.name} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    <div style={{ width:10, height:10, borderRadius:2, background:s.color }} />
-                    <span style={{ color:MUTED, fontSize:12 }}>{s.name}</span>
-                  </div>
-                  <span style={{ color:TEXT, fontWeight:700, fontSize:14 }}>{s.value}%</span>
-                </div>
-              ))}
-              <div style={{ marginTop:12, padding:"8px 12px", background:"#13151f", borderRadius:8, border:`1px solid ${BORDER}` }}>
-                <div style={{ color:MUTED, fontSize:10 }}>NARRATIVE RISK</div>
-                <div style={{ color:"#f43f5e", fontSize:12, marginTop:2 }}>15% negative driven by "AI Note Taker" label limiting perception</div>
-              </div>
+
+      {/* ── AI Industry Insights ── */}
+      <Card>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+          <div>
+            <div style={{ color:TEXT, fontWeight:700, fontSize:13, textTransform:"uppercase", letterSpacing:"0.05em" }}>AI Industry Insights</div>
+            <div style={{ color:MUTED, fontSize:11, marginTop:2 }}>
+              {industryData?.fromCache ? `Cached · updated monthly` : industryData?.generatedAt ? `Generated ${industryData.generatedAt}` : "Market research from past 6 months · updated monthly"}
             </div>
           </div>
-        </Card>
-      </div>
+          <button onClick={()=>refresh("industry")} disabled={industryLoading}
+            style={{ background:industryLoading?BORDER:"linear-gradient(135deg,#6366f1,#22d3ee)", color:"#fff", border:"none", borderRadius:8, padding:"6px 14px", fontSize:11, fontWeight:700, cursor:industryLoading?"not-allowed":"pointer", opacity:industryLoading?0.7:1 }}>
+            {industryLoading ? "Loading..." : "↻ Refresh"}
+          </button>
+        </div>
+
+        {industryLoading && (
+          <div style={{ textAlign:"center", padding:"32px 0", color:MUTED }}>
+            <div style={{ fontSize:28, marginBottom:8 }}>🔍</div>
+            <div style={{ fontSize:12 }}>Searching latest AI industry reports...</div>
+          </div>
+        )}
+
+        {!industryLoading && !industryData && (
+          <div style={{ textAlign:"center", padding:"24px 0", color:MUTED, fontSize:12 }}>Failed to load. Click Refresh to try again.</div>
+        )}
+
+        {!industryLoading && industryData && (
+          <div style={{ display:"grid", gap:12 }}>
+            {/* Headline */}
+            <div style={{ background:"linear-gradient(135deg,#6366f122,#22d3ee11)", border:"1px solid #6366f144", borderRadius:10, padding:"12px 16px" }}>
+              <div style={{ color:CYAN, fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>Big Picture</div>
+              <div style={{ color:TEXT, fontSize:13, fontWeight:600, lineHeight:1.5 }}>{industryData.headline}</div>
+              <div style={{ color:MUTED, fontSize:12, marginTop:6, lineHeight:1.6 }}>{industryData.bigPicture}</div>
+            </div>
+
+            {/* Plaud Opportunity */}
+            <div style={{ background:"#10b98111", border:"1px solid #10b98133", borderRadius:8, padding:"10px 14px" }}>
+              <div style={{ color:"#10b981", fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>Plaud Opportunity</div>
+              <div style={{ color:TEXT, fontSize:12 }}>{industryData.plaudOpportunity}</div>
+            </div>
+
+            {/* Reports grid */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              {(industryData.reports||[]).map((r: any, i: number) => (
+                <div key={i} style={{ background:"#13151f", border:`1px solid ${(categoryColors[r.category]||BORDER)}33`, borderRadius:8, padding:"10px 12px" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                    <div style={{ color:TEXT, fontSize:12, fontWeight:600, lineHeight:1.3, flex:1, marginRight:8 }}>{r.title}</div>
+                    <span style={{ background:(categoryColors[r.category]||MUTED)+"22", color:categoryColors[r.category]||MUTED, borderRadius:4, padding:"2px 6px", fontSize:9, fontWeight:700, whiteSpace:"nowrap" }}>{r.category}</span>
+                  </div>
+                  <div style={{ color:MUTED, fontSize:10, marginBottom:6 }}>{r.source} · {r.date}</div>
+                  <div style={{ color:TEXT, fontSize:11, lineHeight:1.5, marginBottom:6 }}>{r.keyFinding}</div>
+                  <div style={{ color:CYAN, fontSize:10, borderTop:`1px solid ${BORDER}`, paddingTop:6 }}>→ {r.relevanceToPlaud}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* ── Thought Leaders ── */}
+      <Card>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+          <div>
+            <div style={{ color:TEXT, fontWeight:700, fontSize:13, textTransform:"uppercase", letterSpacing:"0.05em" }}>Thought Leaders This Week</div>
+            <div style={{ color:MUTED, fontSize:11, marginTop:2 }}>
+              {thoughtData?.fromCache ? "Cached · updated weekly" : thoughtData?.generatedAt ? `Generated ${thoughtData.generatedAt}` : "Hot AI opinions & debates · updated weekly"}
+            </div>
+          </div>
+          <button onClick={()=>refresh("thought")} disabled={thoughtLoading}
+            style={{ background:thoughtLoading?BORDER:"linear-gradient(135deg,#6366f1,#22d3ee)", color:"#fff", border:"none", borderRadius:8, padding:"6px 14px", fontSize:11, fontWeight:700, cursor:thoughtLoading?"not-allowed":"pointer", opacity:thoughtLoading?0.7:1 }}>
+            {thoughtLoading ? "Loading..." : "↻ Refresh"}
+          </button>
+        </div>
+
+        {thoughtLoading && (
+          <div style={{ textAlign:"center", padding:"32px 0", color:MUTED }}>
+            <div style={{ fontSize:28, marginBottom:8 }}>💬</div>
+            <div style={{ fontSize:12 }}>Searching latest thought leader opinions...</div>
+          </div>
+        )}
+
+        {!thoughtLoading && !thoughtData && (
+          <div style={{ textAlign:"center", padding:"24px 0", color:MUTED, fontSize:12 }}>Failed to load. Click Refresh to try again.</div>
+        )}
+
+        {!thoughtLoading && thoughtData && (
+          <div style={{ display:"grid", gap:12 }}>
+            {/* Hot debate */}
+            {thoughtData.hotDebate && (
+              <div style={{ background:"#f43f5e11", border:"1px solid #f43f5e33", borderRadius:8, padding:"10px 14px" }}>
+                <div style={{ color:"#f43f5e", fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>🔥 Hot Debate Right Now</div>
+                <div style={{ color:TEXT, fontSize:12, lineHeight:1.5 }}>{thoughtData.hotDebate}</div>
+              </div>
+            )}
+
+            {/* Leaders grid */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              {(thoughtData.leaders||[]).map((l: any, i: number) => (
+                <div key={i} style={{ background:"#13151f", border:`1px solid ${(sentimentColors[l.sentiment]||BORDER)}33`, borderRadius:8, padding:"10px 12px" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                    <div>
+                      <div style={{ color:TEXT, fontSize:12, fontWeight:700 }}>{l.name}</div>
+                      <div style={{ color:MUTED, fontSize:10 }}>{l.title}</div>
+                    </div>
+                    <span style={{ background:(sentimentColors[l.sentiment]||MUTED)+"22", color:sentimentColors[l.sentiment]||MUTED, borderRadius:4, padding:"2px 6px", fontSize:9, fontWeight:700, whiteSpace:"nowrap" }}>
+                      {l.sentiment}
+                    </span>
+                  </div>
+                  <div style={{ color:CYAN, fontSize:11, fontStyle:"italic", marginBottom:6, lineHeight:1.5 }}>"{l.quote}"</div>
+                  <div style={{ color:MUTED, fontSize:10, marginBottom:6 }}>{l.source} · {l.date}</div>
+                  <div style={{ color:"#10b981", fontSize:10, borderTop:`1px solid ${BORDER}`, paddingTop:6 }}>→ {l.relevanceToPlaud}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* ── AI Industry Narrative Landscape ── */}
       <Card>
         <div style={{ marginBottom:16 }}>
           <div style={{ color:TEXT, fontWeight:700, fontSize:13, letterSpacing:"0.05em", textTransform:"uppercase" }}>AI Industry Narrative Landscape</div>
@@ -510,7 +664,7 @@ function NarrativeModule() {
           <div style={{ marginTop:8, display:"inline-flex", alignItems:"center", gap:6, background:"#13151f", border:`1px solid ${BORDER}`, borderRadius:8, padding:"6px 12px" }}>
             <span style={{ color:"#10b981", fontSize:11, fontWeight:700 }}>IN</span>
             <span style={{ color:MUTED, fontSize:11 }}>=</span>
-            <span style={{ color:MUTED, fontSize:11 }}>Plaud has actively published content on this topic (pitch / article / statement)</span>
+            <span style={{ color:MUTED, fontSize:11 }}>Plaud has actively published content on this topic</span>
             <span style={{ color:MUTED, fontSize:11, margin:"0 4px" }}>·</span>
             <span style={{ color:"#f43f5e", fontSize:11, fontWeight:700 }}>OUT</span>
             <span style={{ color:MUTED, fontSize:11 }}>=</span>
