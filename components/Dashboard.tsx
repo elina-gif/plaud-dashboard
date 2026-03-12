@@ -369,10 +369,11 @@ const sendReport = async () => {
 
 // ─── Pulse ───────────────────────────────────────────────────
 function PulseModule({
-  regionData, onRegionLoad
+  regionData, onRegionLoad, regionPrevData
 }: {
   regionData: Record<string, { rows: any[]; date: string | null }>;
   onRegionLoad: (region: string, rows: any[], date: string) => void;
+  regionPrevData: Record<string, { rows: any[]; date: string | null }>;
 }) {
   const [dragging, setDragging] = useState<string|null>(null);
 
@@ -410,20 +411,24 @@ function PulseModule({
       <div>
         <div style={{color:TEXT,fontWeight:700,fontSize:12,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:10}}>Weekly Mentions by Region</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
-          {REGIONS.map(r => {
-            const d = regionData[r.key];
-            const hasData = d?.rows?.length > 0;
-            const stats = hasData ? getStats(d.rows) : null;
-            return (
-              <MetricTile key={r.key}
-                label={`${r.flag} ${r.label} Weekly Mentions`}
-                value={hasData ? String(stats!.total) : "—"}
-                sub={hasData ? `Uploaded ${d.date}` : "No data"}
-                highlight={hasData}
-                color={r.color}
-              />
-            );
-          })}
+         {REGIONS.map(r => {
+  const d     = regionData[r.key];
+  const prev  = regionPrevData[r.key];
+  const hasData = d?.rows?.length > 0;
+  const stats   = hasData ? getStats(d.rows) : null;
+  const prevStats = prev?.rows?.length > 0 ? getStats(prev.rows) : null;
+  const wow = stats && prevStats ? Math.round(((stats.total - prevStats.total) / prevStats.total) * 100) : null;
+  return (
+    <MetricTile key={r.key}
+      label={`${r.flag} ${r.label} Weekly Mentions`}
+      value={hasData ? String(stats!.total) : "—"}
+      trend={wow !== null ? (wow >= 0 ? "up" : "down") : undefined}
+      sub={wow !== null ? `${wow >= 0 ? "+" : ""}${wow}% vs last week` : (hasData ? `Uploaded ${d.date}` : "No data")}
+      highlight={hasData}
+      color={r.color}
+    />
+  );
+})}
         </div>
       </div>
 
@@ -1330,21 +1335,28 @@ export default function Dashboard({ initialInsights,initialCoverage,initialMetri
   const [trendsData,setTrendsData]             = useState<any[]>([]);
   const [trendsKeywords,setTrendsKeywords]     = useState<string[]>([]);
   const [trendsUploadedAt,setTrendsUploadedAt] = useState<string|null>(null);
-
+const [regionPrevData, setRegionPrevData] = useState<Record<string,{rows:any[];date:string|null}>>({
+  us:{rows:[],date:null}, eu:{rows:[],date:null}, jp:{rows:[],date:null}, apac:{rows:[],date:null},
+});
   // Load from Redis on mount
   const [loaded,setLoaded] = useState(false);
   useState(()=>{
     const load = async () => {
       try {
-        const [mw,ga4,trends,us,eu,jp,apac] = await Promise.all([
-          fetch("/api/load-data?key=meltwater").then(r=>r.json()),
-          fetch("/api/load-data?key=ga4").then(r=>r.json()),
-          fetch("/api/load-data?key=trends").then(r=>r.json()),
-          fetch("/api/load-data?key=pulse_us").then(r=>r.json()),
-          fetch("/api/load-data?key=pulse_eu").then(r=>r.json()),
-          fetch("/api/load-data?key=pulse_jp").then(r=>r.json()),
-          fetch("/api/load-data?key=pulse_apac").then(r=>r.json()),
-        ]);
+        const [mw,ga4,trends,us,eu,jp,apac,mwPrev,usPrev,euPrev,jpPrev,apacPrev] = await Promise.all([
+  fetch("/api/load-data?key=meltwater").then(r=>r.json()),
+  fetch("/api/load-data?key=ga4").then(r=>r.json()),
+  fetch("/api/load-data?key=trends").then(r=>r.json()),
+  fetch("/api/load-data?key=pulse_us").then(r=>r.json()),
+  fetch("/api/load-data?key=pulse_eu").then(r=>r.json()),
+  fetch("/api/load-data?key=pulse_jp").then(r=>r.json()),
+  fetch("/api/load-data?key=pulse_apac").then(r=>r.json()),
+  fetch("/api/load-data?key=meltwater_prev").then(r=>r.json()),
+  fetch("/api/load-data?key=pulse_us_prev").then(r=>r.json()),
+  fetch("/api/load-data?key=pulse_eu_prev").then(r=>r.json()),
+  fetch("/api/load-data?key=pulse_jp_prev").then(r=>r.json()),
+  fetch("/api/load-data?key=pulse_apac_prev").then(r=>r.json()),
+]);
         if (mw.data)     { setMwData(mw.data.rows);          setMwDate(mw.data.date); }
         if (ga4.data)    { setKeywordData(ga4.data.keywords); setPageData(ga4.data.pages); setGa4Date(ga4.data.date); }
         if (trends.data) { setTrendsData(trends.data.rows);   setTrendsKeywords(trends.data.keywords); setTrendsUploadedAt(trends.data.date); }
@@ -1354,6 +1366,12 @@ export default function Dashboard({ initialInsights,initialCoverage,initialMetri
         if (jp.data)   newRegion.jp   = {rows:jp.data.rows,   date:jp.data.date};
         if (apac.data) newRegion.apac = {rows:apac.data.rows, date:apac.data.date};
         setRegionData(newRegion);
+        const newPrevRegion: Record<string,{rows:any[];date:string|null}> = {us:{rows:[],date:null},eu:{rows:[],date:null},jp:{rows:[],date:null},apac:{rows:[],date:null}};
+if (usPrev.data)   newPrevRegion.us   = {rows:usPrev.data.rows,   date:usPrev.data.date};
+if (euPrev.data)   newPrevRegion.eu   = {rows:euPrev.data.rows,   date:euPrev.data.date};
+if (jpPrev.data)   newPrevRegion.jp   = {rows:jpPrev.data.rows,   date:jpPrev.data.date};
+if (apacPrev.data) newPrevRegion.apac = {rows:apacPrev.data.rows, date:apacPrev.data.date};
+setRegionPrevData(newPrevRegion);
       } catch {}
       setLoaded(true);
     };
@@ -1403,7 +1421,7 @@ export default function Dashboard({ initialInsights,initialCoverage,initialMetri
       <div style={{padding:24,maxWidth:1200,margin:"0 auto"}}>
         {!loaded&&<div style={{color:MUTED,fontSize:12,textAlign:"center",padding:"40px 0"}}>Loading data...</div>}
         {loaded&&<>
-          {tab===0&&<PulseModule regionData={regionData} onRegionLoad={handleRegionLoad}/>}
+          {tab===0&&<PulseModule regionData={regionData} onRegionLoad={handleRegionLoad} regionPrevData={regionPrevData}/>}
           {tab===1&&<NarrativeModule/>}
           {tab===2&&<CompetitiveModule/>}
           {tab===3&&<ActionModule coverage={initialCoverage||[]}/>}
