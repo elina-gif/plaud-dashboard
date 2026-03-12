@@ -118,7 +118,7 @@ Format the output as HTML email content with clear sections. Use <h2> for sectio
       },
       body: JSON.stringify({
         from: "Plaud PR Dashboard <onboarding@resend.dev>",
-        to:      ["elina@plaud.ai", "cher@plaud.ai"],
+        to:      ["elina@plaud.ai"],
         subject: `📊 Plaud PR Weekly Report — ${today}`,
         html:    fullHtml,
       }),

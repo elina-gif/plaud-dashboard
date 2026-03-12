@@ -586,7 +586,7 @@ function NarrativeModule() {
 
   return (
     <div style={{display:"grid",gap:16}}>
-      <NarrativeOwnershipCard />
+      
 
       <Card>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
