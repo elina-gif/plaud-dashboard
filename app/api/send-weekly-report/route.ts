@@ -117,7 +117,7 @@ Format the output as HTML email content with clear sections. Use <h2> for sectio
         "Authorization": `Bearer ${resendKey}`,
       },
       body: JSON.stringify({
-        from:    "Plaud PR Dashboard <media@prupdates.plaud.ai>",
+        from: "Plaud PR Dashboard <onboarding@resend.dev>",
         to:      ["elina@plaud.ai", "cher@plaud.ai"],
         subject: `📊 Plaud PR Weekly Report — ${today}`,
         html:    fullHtml,
