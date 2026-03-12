@@ -838,6 +838,16 @@ const refreshInspirations = async () => {
   setInspireLoading(false);
 };
   const [loading,setLoading]   = useState(false);
+  useState(()=>{
+  const load = async () => {
+    try {
+      const res  = await fetch("/api/load-data?key=weekly_brief");
+      const json = await res.json();
+      if (json.data) setInsights(json.data);
+    } catch {}
+  };
+  load();
+});
   const [sending,  setSending]  = useState(false);
   const [sendMsg,  setSendMsg]  = useState<string|null>(null);
   const sendReport = async () => {
@@ -855,7 +865,10 @@ const refreshInspirations = async () => {
     try {
       const res  = await fetch("/api/insights",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({})});
       const data = await res.json();
-      if (!data.error) setInsights(data);
+     if (!data.error) {
+  setInsights(data);
+  await fetch("/api/save-data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"weekly_brief",data})});
+}
     } catch {}
     setLoading(false);
   };
