@@ -3,8 +3,9 @@ import { Redis } from "@upstash/redis";
 
 const redis = Redis.fromEnv();
 
-const INDUSTRY_TTL = 60 * 60 * 24 * 30;
-const THOUGHT_TTL  = 60 * 60 * 24 * 7;
+const INDUSTRY_TTL     = 60 * 60 * 24 * 30;
+const THOUGHT_TTL      = 60 * 60 * 24 * 7;
+const INSPIRATIONS_TTL = 60 * 60 * 24 * 14; // 2周更新一次
 
 export const maxDuration = 60;
 
@@ -17,8 +18,10 @@ export async function POST(req: Request) {
 
   const mode         = body.mode || "industry";
   const forceRefresh = body.forceRefresh || false;
-  const cacheKey     = mode === "industry" ? "narrative:industry" : "narrative:thought";
-  const now          = new Date().toISOString().split("T")[0];
+  const cacheKey     = mode === "industry" ? "narrative:industry"
+                     : mode === "thought"  ? "narrative:thought"
+                     : "narrative:inspirations";
+  const now = new Date().toISOString().split("T")[0];
 
   if (!forceRefresh) {
     try {
@@ -87,7 +90,42 @@ Return ONLY raw JSON (no markdown, no code fences, no cite tags, no XML):
 }
 Include 6-8 thought leaders.`;
 
-  const prompt = mode === "industry" ? industryPrompt : thoughtPrompt;
+  const inspirationsPrompt = `Today is ${now}. You are a brand strategist for Plaud AI, an AI hardware company (NotePin voice recorder, AI work companion, targeting professionals).
+
+Based on your knowledge, identify the most creative and effective brand activation campaigns run by global AI companies in the past 60 days. Focus on:
+1. Content marketing campaigns that went viral or generated significant PR
+2. Social media activations (X, LinkedIn, TikTok, Instagram)
+3. Community-building initiatives (Discord, events, ambassador programs)
+4. Partnerships and co-marketing activations
+5. Product launch campaigns and PR stunts
+6. Thought leadership campaigns (CEO positioning, op-eds, talks)
+
+For each campaign, explain WHY it worked and what Plaud can specifically learn or adapt.
+
+Return ONLY raw JSON (no markdown, no code fences, no cite tags, no XML):
+{
+  "generatedAt": "${now}",
+  "headline": "one sentence summarizing the biggest brand activation trend among AI companies right now",
+  "campaigns": [
+    {
+      "brand": "company name",
+      "campaign": "campaign name or description",
+      "type": "Content Marketing | Social Media | Community | Partnership | PR Stunt | Thought Leadership | Product Launch",
+      "date": "approximate month/period",
+      "whatTheyDid": "2-3 sentences describing the activation, plain text only",
+      "whyItWorked": "2 sentences on why it was effective, plain text only",
+      "plaudTakeaway": "1-2 sentences on what Plaud can specifically learn or adapt from this, plain text only",
+      "effort": "Low | Medium | High",
+      "impact": "Low | Medium | High"
+    }
+  ],
+  "bigInsight": "2-3 sentences on the overall brand activation trend Plaud should pay attention to, plain text only"
+}
+Include 6-8 campaigns. Prioritize campaigns with High impact. Be specific and concrete.`;
+
+  const prompt = mode === "industry" ? industryPrompt
+               : mode === "thought"  ? thoughtPrompt
+               : inspirationsPrompt;
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -100,7 +138,7 @@ Include 6-8 thought leaders.`;
       body: JSON.stringify({
         model:      "claude-sonnet-4-20250514",
         max_tokens: 2000,
-        system:     "You are a market research analyst. Respond ONLY with raw JSON. No markdown, no code fences, no XML tags, no cite tags.",
+        system:     "You are a brand strategist. Respond ONLY with raw JSON. No markdown, no code fences, no XML tags, no cite tags.",
         messages:   [{ role: "user", content: prompt }],
       }),
     });
@@ -110,7 +148,9 @@ Include 6-8 thought leaders.`;
     const cleaned   = textBlock.replace(/<cite[^>]*>|<\/cite>/g, "").replace(/```json|```/g, "").trim();
     const parsed    = JSON.parse(cleaned);
 
-    const ttl = mode === "industry" ? INDUSTRY_TTL : THOUGHT_TTL;
+    const ttl = mode === "industry" ? INDUSTRY_TTL
+              : mode === "thought"  ? THOUGHT_TTL
+              : INSPIRATIONS_TTL;
     await redis.set(cacheKey, JSON.stringify(parsed), { ex: ttl });
 
     return NextResponse.json({ ...parsed, fromCache: false });

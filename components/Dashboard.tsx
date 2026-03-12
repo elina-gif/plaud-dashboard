@@ -813,6 +813,30 @@ function ActionModule({ coverage }: { coverage: any[] }) {
 // ─── AI Insights ─────────────────────────────────────────────
 function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initialInsights:any; generatedAt:string|null; weekNumber:number|null }) {
   const [insights,setInsights] = useState<any>(initialInsights);
+  const [inspirations,   setInspirations]   = useState<any>(null);
+const [inspireLoading, setInspireLoading] = useState(true);
+
+useState(()=>{
+  const load = async () => {
+    try {
+      const res  = await fetch("/api/narrative-insights",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"inspirations"})});
+      const data = await res.json();
+      if (!data.error) setInspirations(data);
+    } catch {}
+    setInspireLoading(false);
+  };
+  load();
+});
+
+const refreshInspirations = async () => {
+  setInspireLoading(true);
+  try {
+    const res  = await fetch("/api/narrative-insights",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"inspirations",forceRefresh:true})});
+    const data = await res.json();
+    if (!data.error) setInspirations(data);
+  } catch {}
+  setInspireLoading(false);
+};
   const [loading,setLoading]   = useState(false);
   const [sending,  setSending]  = useState(false);
   const [sendMsg,  setSendMsg]  = useState<string|null>(null);
@@ -898,6 +922,61 @@ function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initia
           </div>
         )}
       </Card>
+      {/* Inspirations */}
+<Card>
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+    <div>
+      <div style={{color:TEXT,fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:"0.05em"}}>✨ Brand Activation Inspirations</div>
+      <div style={{color:MUTED,fontSize:11,marginTop:2}}>{inspirations?.fromCache?"Cached · updated every 2 weeks":inspirations?.generatedAt?`Generated ${inspirations.generatedAt}`:"Global AI brand campaigns · updated every 2 weeks"}</div>
+    </div>
+    <GradButton onClick={refreshInspirations} loading={inspireLoading} loadingText="Loading...">↻ Refresh</GradButton>
+  </div>
+  {inspireLoading&&<div style={{textAlign:"center",padding:"32px 0",color:MUTED}}><div style={{fontSize:28,marginBottom:8}}>✨</div><div style={{fontSize:12}}>Loading brand activation inspirations...</div></div>}
+  {!inspireLoading&&!inspirations&&<div style={{textAlign:"center",padding:"24px 0",color:MUTED,fontSize:12}}>Failed to load. Click Refresh to try again.</div>}
+  {!inspireLoading&&inspirations&&(
+    <div style={{display:"grid",gap:12}}>
+      <div style={{background:GRAD,borderRadius:12,padding:"14px 18px"}}>
+        <div style={{color:"rgba(255,255,255,0.7)",fontSize:10,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>Trend Insight</div>
+        <div style={{color:"#fff",fontSize:13,fontWeight:600,lineHeight:1.5}}>{inspirations.bigInsight}</div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        {(inspirations.campaigns||[]).map((c:any,i:number)=>{
+          const impactColor = c.impact==="High"?"#f43f5e":c.impact==="Medium"?"#f59e0b":MUTED;
+          const effortColor = c.effort==="Low"?GREEN:c.effort==="Medium"?"#f59e0b":"#f43f5e";
+          const typeColor: Record<string,string> = {
+            "Content Marketing":ACCENT,"Social Media":BLUE,"Community":GREEN,
+            "Partnership":"#f59e0b","PR Stunt":"#f43f5e","Thought Leadership":ACCENT,"Product Launch":BLUE
+          };
+          return (
+            <div key={i} style={{background:CARD2,border:`1px solid ${BORDER}`,borderRadius:10,padding:"12px 14px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                <div>
+                  <div style={{color:TEXT,fontSize:13,fontWeight:700}}>{c.brand}</div>
+                  <div style={{color:MUTED,fontSize:10,marginTop:1}}>{c.date}</div>
+                </div>
+                <span style={{background:(typeColor[c.type]||MUTED)+"18",color:typeColor[c.type]||MUTED,borderRadius:4,padding:"2px 7px",fontSize:9,fontWeight:700,whiteSpace:"nowrap"}}>{c.type}</span>
+              </div>
+              <div style={{color:TEXT,fontSize:11,fontWeight:600,marginBottom:6,lineHeight:1.4}}>{c.campaign}</div>
+              <div style={{color:MUTED,fontSize:11,lineHeight:1.5,marginBottom:8}}>{c.whatTheyDid}</div>
+              <div style={{background:GREEN+"10",border:`1px solid ${GREEN}33`,borderRadius:8,padding:"8px 10px",marginBottom:8}}>
+                <div style={{color:"#1a7a3a",fontSize:9,fontWeight:700,textTransform:"uppercase",marginBottom:3}}>Why it worked</div>
+                <div style={{color:TEXT,fontSize:11,lineHeight:1.4}}>{c.whyItWorked}</div>
+              </div>
+              <div style={{background:ACCENT+"10",border:`1px solid ${ACCENT}33`,borderRadius:8,padding:"8px 10px",marginBottom:8}}>
+                <div style={{color:ACCENT,fontSize:9,fontWeight:700,textTransform:"uppercase",marginBottom:3}}>Plaud takeaway</div>
+                <div style={{color:TEXT,fontSize:11,lineHeight:1.4}}>{c.plaudTakeaway}</div>
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <span style={{background:impactColor+"18",color:impactColor,borderRadius:4,padding:"2px 8px",fontSize:9,fontWeight:700}}>Impact: {c.impact}</span>
+                <span style={{background:effortColor+"18",color:effortColor,borderRadius:4,padding:"2px 8px",fontSize:9,fontWeight:700}}>Effort: {c.effort}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
+</Card>
     </div>
   );
 }
