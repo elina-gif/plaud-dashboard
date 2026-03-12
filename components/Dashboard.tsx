@@ -258,6 +258,18 @@ function JournalistTracker({ coverage }: { coverage: any[] }) {
   const [newJ,setNewJ] = useState({name:"",outlet:"",beat:"",tier:"Tier 1"});
   const [aiRecs,setAiRecs] = useState<any[]>([]);
   const [loading,setLoading] = useState(false);
+  const [sending,  setSending]  = useState(false);
+const [sendMsg,  setSendMsg]  = useState<string|null>(null);
+const sendReport = async () => {
+  setSending(true); setSendMsg(null);
+  try {
+    const res  = await fetch("/api/send-weekly-report", { method:"POST", headers:{"Content-Type":"application/json"} });
+    const data = await res.json();
+    if (data.ok) setSendMsg("✓ Report sent to elina@plaud.ai and cher@plaud.ai");
+    else setSendMsg("✗ Failed to send: " + JSON.stringify(data.error));
+  } catch { setSendMsg("✗ Network error"); }
+  setSending(false);
+};
   const addJournalist = () => {
     if (!newJ.name||!newJ.outlet) return;
     setManualList(prev=>[...prev,newJ]); setNewJ({name:"",outlet:"",beat:"",tier:"Tier 1"}); setShowAdd(false);
@@ -817,6 +829,18 @@ function ActionModule({ coverage }: { coverage: any[] }) {
 function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initialInsights:any; generatedAt:string|null; weekNumber:number|null }) {
   const [insights,setInsights] = useState<any>(initialInsights);
   const [loading,setLoading]   = useState(false);
+  const [sending,  setSending]  = useState(false);
+const [sendMsg,  setSendMsg]  = useState<string|null>(null);
+const sendReport = async () => {
+  setSending(true); setSendMsg(null);
+  try {
+    const res  = await fetch("/api/send-weekly-report", { method:"POST", headers:{"Content-Type":"application/json"} });
+    const data = await res.json();
+    if (data.ok) setSendMsg("✓ Report sent to elina@plaud.ai and cher@plaud.ai");
+    else setSendMsg("✗ Failed to send: " + JSON.stringify(data.error));
+  } catch { setSendMsg("✗ Network error"); }
+  setSending(false);
+};
   const generate = async () => {
     setLoading(true);
     try {
@@ -836,9 +860,14 @@ function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initia
               {generatedAt?`Last updated: ${new Date(generatedAt).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})} · Week ${weekNumber}`:"Auto-updates every Thursday 09:00 CST"}
             </div>
           </div>
-          <button onClick={generate} disabled={loading} style={{background:loading?BORDER:"linear-gradient(135deg,#6366f1,#22d3ee)",color:"#fff",border:"none",borderRadius:8,padding:"8px 18px",fontSize:12,fontWeight:700,cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1}}>
-            {loading?"Analyzing...":"Generate Brief"}
-          </button>
+          <div style={{ display:"flex", gap:8 }}>
+  <button onClick={generate} disabled={loading} style={{ background:loading?BORDER:"linear-gradient(135deg,#6366f1,#22d3ee)", color:"#fff", border:"none", borderRadius:8, padding:"8px 18px", fontSize:12, fontWeight:700, cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1 }}>
+    {loading?"Analyzing...":"Generate Brief"}
+  </button>
+  <button onClick={sendReport} disabled={sending} style={{ background:sending?BORDER:"#10b981", color:"#fff", border:"none", borderRadius:8, padding:"8px 18px", fontSize:12, fontWeight:700, cursor:sending?"not-allowed":"pointer", opacity:sending?0.7:1 }}>
+    {sending?"Sending...":"📧 Send Weekly Report"}
+  </button>
+</div>
         </div>
         {!insights&&!loading&&(<div style={{textAlign:"center",padding:"40px 0",color:MUTED}}><div style={{fontSize:32,marginBottom:8}}>🧠</div><div style={{fontSize:13}}>Click "Generate Brief" to start.</div></div>)}
         {loading&&<div style={{textAlign:"center",padding:"40px 0",color:MUTED,fontSize:13}}>Analyzing PR data...</div>}
@@ -879,6 +908,11 @@ function AIInsightsModule({ initialInsights, generatedAt, weekNumber }: { initia
             </div>
           </div>
         )}
+        {sendMsg && (
+  <div style={{ marginTop:12, padding:"8px 14px", background:sendMsg.startsWith("✓")?"#10b98111":"#f43f5e11", border:`1px solid ${sendMsg.startsWith("✓")?"#10b98133":"#f43f5e33"}`, borderRadius:8, fontSize:11, color:sendMsg.startsWith("✓")?"#10b981":"#f43f5e" }}>
+    {sendMsg}
+  </div>
+)}
       </Card>
     </div>
   );
