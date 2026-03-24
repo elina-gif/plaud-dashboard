@@ -518,173 +518,134 @@ function PulseModule({
 
 // ─── Narrative ───────────────────────────────────────────────
 function NarrativeModule() {
-  const [topics, setTopics] = useState(defaultTopics);
-  const [industryData, setIndustryData] = useState<any>(null);
-  const [industryLoading, setIndustryLoading] = useState(true);
-  const [thoughtData, setThoughtData] = useState<any>(null);
-  const [thoughtLoading, setThoughtLoading] = useState(true);
+  const [topics,setTopics] = useState(defaultTopics);
+  const [industryData,setIndustryData] = useState<any>(null);
+  const [industryLoading,setIndustryLoading] = useState(true);
+  const [thoughtData,setThoughtData] = useState<any>(null);
+  const [thoughtLoading,setThoughtLoading] = useState(true);
 
-  useState(() => {
+  useState(()=>{
     const fetchAll = async () => {
       try {
-        const res = await fetch("/api/narrative-insights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "industry" }) });
+        const res = await fetch("/api/narrative-insights",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"industry"})});
         const data = await res.json();
         if (!data.error) setIndustryData(data);
-      } catch { }
+      } catch {}
       setIndustryLoading(false);
       try {
-        const res = await fetch("/api/narrative-insights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "thought" }) });
+        const res = await fetch("/api/narrative-insights",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"thought"})});
         const data = await res.json();
         if (!data.error) setThoughtData(data);
-      } catch { }
+      } catch {}
       setThoughtLoading(false);
     };
     fetchAll();
   });
 
-  const refresh = async (mode: "industry" | "thought") => {
-    if (mode === "industry") setIndustryLoading(true); else setThoughtLoading(true);
+  const refresh = async (mode:"industry"|"thought") => {
+    if (mode==="industry") setIndustryLoading(true); else setThoughtLoading(true);
     try {
-      const res = await fetch("/api/narrative-insights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode, forceRefresh: true }) });
+      const res = await fetch("/api/narrative-insights",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode,forceRefresh:true})});
       const data = await res.json();
-      if (!data.error) { if (mode === "industry") setIndustryData(data); else setThoughtData(data); }
-    } catch { }
-    if (mode === "industry") setIndustryLoading(false); else setThoughtLoading(false);
+      if (!data.error) { if (mode==="industry") setIndustryData(data); else setThoughtData(data); }
+    } catch {}
+    if (mode==="industry") setIndustryLoading(false); else setThoughtLoading(false);
   };
 
-  const sentimentColors: Record<string, string> = { opportunity: GREEN, risk: "#f43f5e", neutral: ACCENT };
-  const categoryColors: Record<string, string> = { "Enterprise AI": ACCENT, "Consumer AI": BLUE, "AI Hardware": GREEN, "Regional Trends": "#f59e0b" };
+  const sentimentColors: Record<string,string> = {opportunity:GREEN,risk:"#f43f5e",neutral:ACCENT};
+  const categoryColors: Record<string,string> = {"Enterprise AI":ACCENT,"Consumer AI":BLUE,"AI Hardware":GREEN,"Regional Trends":"#f59e0b"};
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      {/* Industry Insights Card */}
+    <div style={{display:"grid",gap:16}}>
       <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
           <div>
-            <div style={{ color: TEXT, fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>AI Industry Insights</div>
-            <div style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>{industryData?.fromCache ? "Cached · updated monthly" : industryData?.generatedAt ? `Generated ${industryData.generatedAt}` : "Market research · updated monthly"}</div>
+            <div style={{color:TEXT,fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:"0.05em"}}>AI Industry Insights</div>
+            <div style={{color:MUTED,fontSize:11,marginTop:2}}>{industryData?.fromCache?"Cached · updated monthly":industryData?.generatedAt?`Generated ${industryData.generatedAt}`:"Market research · updated monthly"}</div>
           </div>
-          <GradButton onClick={() => refresh("industry")} loading={industryLoading} loadingText="Loading...">↻ Refresh</GradButton>
+          <GradButton onClick={()=>refresh("industry")} loading={industryLoading} loadingText="Loading...">↻ Refresh</GradButton>
         </div>
-        {industryLoading && <div style={{ textAlign: "center", padding: "32px 0", color: MUTED }}><div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div><div style={{ fontSize: 12 }}>Loading AI industry insights...</div></div>}
-        {!industryLoading && !industryData && <div style={{ textAlign: "center", padding: "24px 0", color: MUTED, fontSize: 12 }}>Failed to load. Click Refresh to try again.</div>}
-        {!industryLoading && industryData && (
-          <div style={{ display: "grid", gap: 12 }}>
-            <div style={{ background: GRAD, borderRadius: 12, padding: "14px 18px" }}>
-              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>Big Picture</div>
-              <div style={{ color: "#fff", fontSize: 13, fontWeight: 700, lineHeight: 1.5 }}>
+        {industryLoading&&<div style={{textAlign:"center",padding:"32px 0",color:MUTED}}><div style={{fontSize:28,marginBottom:8}}>🔍</div><div style={{fontSize:12}}>Loading AI industry insights...</div></div>}
+        {!industryLoading&&!industryData&&<div style={{textAlign:"center",padding:"24px 0",color:MUTED,fontSize:12}}>Failed to load. Click Refresh to try again.</div>}
+        {!industryLoading&&industryData&&(
+          <div style={{display:"grid",gap:12}}>
+            <div style={{background:GRAD,borderRadius:12,padding:"14px 18px"}}>
+              <div style={{color:"rgba(255,255,255,0.7)",fontSize:10,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>Big Picture</div>
+              <div style={{color:"#fff",fontSize:13,fontWeight:700,lineHeight:1.5}}>
                 {industryData.url ? (
-                  <a href={industryData.url} target="_blank" rel="noopener noreferrer" style={{ color: "#fff", textDecoration: "underline" }}>
-                    {industryData.headline}
-                  </a>
-                ) : (
-                  industryData.headline
-                )}
+                  <a href={industryData.url} target="_blank" rel="noopener noreferrer" style={{color:"#fff",textDecoration:"underline"}}>{industryData.headline}</a>
+                ) : (industryData.headline)}
               </div>
-              <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, marginTop: 6, lineHeight: 1.6 }}>{industryData.bigPicture}</div>
+              <div style={{color:"rgba(255,255,255,0.85)",fontSize:12,marginTop:6,lineHeight:1.6}}>{industryData.bigPicture}</div>
             </div>
-            <div style={{ background: GREEN + "15", border: `1px solid ${GREEN}33`, borderRadius: 10, padding: "10px 14px" }}>
-              <div style={{ color: "#1a7a3a", fontSize: 10, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>Plaud Opportunity</div>
-              <div style={{ color: TEXT, fontSize: 12 }}>{industryData.plaudOpportunity}</div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {(industryData.reports || []).map((r: any, i: number) => (
-                <div key={i} style={{ background: CARD2, border: `1px solid ${(categoryColors[r.category] || BORDER)}33`, borderRadius: 10, padding: "12px 14px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                    <div style={{ color: TEXT, fontSize: 12, fontWeight: 600, lineHeight: 1.3, flex: 1, marginRight: 8 }}>
-                      {r.url ? (
-                        <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: TEXT, textDecoration: "none" }}>{r.title}</a>
-                      ) : (r.title)}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              {(industryData.reports||[]).map((r:any,i:number)=>{
+                const targetUrl = r.url || r.link || r.sourceUrl;
+                return (
+                  <div key={i} style={{background:CARD2,border:`1px solid ${(categoryColors[r.category]||BORDER)}33`,borderRadius:10,padding:"12px 14px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                      <div style={{color:TEXT,fontSize:12,fontWeight:600,lineHeight:1.3,flex:1,marginRight:8}}>
+                        {targetUrl ? (
+                          <a href={targetUrl} target="_blank" rel="noopener noreferrer" style={{color:TEXT,textDecoration:"none",borderBottom:`1px dashed ${MUTED}`}}>{r.title}</a>
+                        ) : (r.title)}
+                      </div>
+                      <span style={{background:(categoryColors[r.category]||MUTED)+"18",color:categoryColors[r.category]||MUTED,borderRadius:4,padding:"2px 6px",fontSize:9,fontWeight:700,whiteSpace:"nowrap"}}>{r.category}</span>
                     </div>
-                    <span style={{ background: (categoryColors[r.category] || MUTED) + "18", color: categoryColors[r.category] || MUTED, borderRadius: 4, padding: "2px 6px", fontSize: 9, fontWeight: 700, whiteSpace: "nowrap" }}>{r.category}</span>
+                    <div style={{color:MUTED,fontSize:10,marginBottom:6}}>
+                      {targetUrl ? (
+                        <a href={targetUrl} target="_blank" rel="noopener noreferrer" style={{color:BLUE,textDecoration:"none",fontWeight:700}}>{r.source} ↗</a>
+                      ) : (r.source)} · {r.date}
+                    </div>
+                    <div style={{color:TEXT,fontSize:11,lineHeight:1.5}}>{r.keyFinding}</div>
                   </div>
-                  <div style={{ color: MUTED, fontSize: 10, marginBottom: 6 }}>
-                    {r.url ? (
-                      <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: BLUE, textDecoration: "none", fontWeight: 600 }}>{r.source} ↗</a>
-                    ) : (r.source)} · {r.date}
-                  </div>
-                  <div style={{ color: TEXT, fontSize: 11, lineHeight: 1.5, marginBottom: 6 }}>{r.keyFinding}</div>
-                  <div style={{ color: BLUE, fontSize: 10, borderTop: `1px solid ${BORDER}`, paddingTop: 6 }}>→ {r.relevanceToPlaud}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
       </Card>
 
-      {/* Thought Leaders Card */}
       <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
           <div>
-            <div style={{ color: TEXT, fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>Thought Leaders This Week</div>
-            <div style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>{thoughtData?.fromCache ? "Cached · updated weekly" : thoughtData?.generatedAt ? `Generated ${thoughtData.generatedAt}` : "Hot AI opinions & debates · updated weekly"}</div>
+            <div style={{color:TEXT,fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:"0.05em"}}>Thought Leaders This Week</div>
           </div>
-          <GradButton onClick={() => refresh("thought")} loading={thoughtLoading} loadingText="Loading...">↻ Refresh</GradButton>
+          <GradButton onClick={()=>refresh("thought")} loading={thoughtLoading} loadingText="Loading...">↻ Refresh</GradButton>
         </div>
-        {thoughtLoading && <div style={{ textAlign: "center", padding: "32px 0", color: MUTED }}><div style={{ fontSize: 28, marginBottom: 8 }}>💬</div><div style={{ fontSize: 12 }}>Loading thought leader opinions...</div></div>}
-        {!thoughtLoading && !thoughtData && <div style={{ textAlign: "center", padding: "24px 0", color: MUTED, fontSize: 12 }}>Failed to load. Click Refresh to try again.</div>}
-        {!thoughtLoading && thoughtData && (
-          <div style={{ display: "grid", gap: 12 }}>
-            {thoughtData.hotDebate && (
-              <div style={{ background: "#fff0f0", border: "1px solid #f43f5e33", borderRadius: 10, padding: "10px 14px" }}>
-                <div style={{ color: "#f43f5e", fontSize: 10, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>🔥 Hot Debate Right Now</div>
-                <div style={{ color: TEXT, fontSize: 12, lineHeight: 1.5 }}>{thoughtData.hotDebate}</div>
-              </div>
-            )}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {(thoughtData.leaders || []).map((l: any, i: number) => (
-                <div key={i} style={{ background: CARD2, border: `1px solid ${(sentimentColors[l.sentiment] || BORDER)}33`, borderRadius: 10, padding: "12px 14px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                    <div><div style={{ color: TEXT, fontSize: 12, fontWeight: 700 }}>{l.name}</div><div style={{ color: MUTED, fontSize: 10 }}>{l.title}</div></div>
-                    <span style={{ background: (sentimentColors[l.sentiment] || MUTED) + "18", color: sentimentColors[l.sentiment] || MUTED, borderRadius: 4, padding: "2px 6px", fontSize: 9, fontWeight: 700, whiteSpace: "nowrap" }}>{l.sentiment}</span>
+        {thoughtLoading&&<div style={{textAlign:"center",padding:"32px 0",color:MUTED}}><div style={{fontSize:28,marginBottom:8}}>💬</div><div style={{fontSize:12}}>Loading thought leader opinions...</div></div>}
+        {!thoughtLoading&&thoughtData&&(
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            {(thoughtData.leaders||[]).map((l:any,i:number)=>{
+              const targetUrl = l.url || l.link;
+              return (
+                <div key={i} style={{background:CARD2,border:`1px solid ${(sentimentColors[l.sentiment]||BORDER)}33`,borderRadius:10,padding:"12px 14px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                    <div><div style={{color:TEXT,fontSize:12,fontWeight:700}}>{l.name}</div><div style={{color:MUTED,fontSize:10}}>{l.title}</div></div>
+                    <span style={{background:(sentimentColors[l.sentiment]||MUTED)+"18",color:sentimentColors[l.sentiment]||MUTED,borderRadius:4,padding:"2px 6px",fontSize:9,fontWeight:700}}>{l.sentiment}</span>
                   </div>
-                  <div style={{ color: ACCENT, fontSize: 11, fontStyle: "italic", marginBottom: 6, lineHeight: 1.5 }}>
-                    {l.url ? (
-                      <a href={l.url} target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>"{l.quote}"</a>
-                    ) : (`"${l.quote}"`)}
+                  <div style={{color:ACCENT,fontSize:11,fontStyle:"italic",marginBottom:6}}>
+                    {targetUrl ? (<a href={targetUrl} target="_blank" rel="noopener noreferrer" style={{color:ACCENT,textDecoration:"none"}}>"{l.quote}"</a>) : (`"${l.quote}"`)}
                   </div>
-                  <div style={{ color: MUTED, fontSize: 10, marginBottom: 6 }}>
-                    {l.url ? (
-                      <a href={l.url} target="_blank" rel="noopener noreferrer" style={{ color: BLUE, textDecoration: "none", fontWeight: 600 }}>{l.source} ↗</a>
-                    ) : (l.source)} · {l.date}
+                  <div style={{color:MUTED,fontSize:10}}>
+                    {targetUrl ? (<a href={targetUrl} target="_blank" rel="noopener noreferrer" style={{color:BLUE,textDecoration:"none"}}>{l.source} ↗</a>) : (l.source)} · {l.date}
                   </div>
-                  <div style={{ color: GREEN, fontSize: 10, borderTop: `1px solid ${BORDER}`, paddingTop: 6 }}>→ {l.relevanceToPlaud}</div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         )}
       </Card>
 
-      {/* Narrative Landscape Card */}
       <Card>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ color: TEXT, fontWeight: 700, fontSize: 13, letterSpacing: "0.05em", textTransform: "uppercase" }}>AI Industry Narrative Landscape</div>
-          <div style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>Which AI stories are breaking — and is Plaud in them?</div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-          {topics.map((t, idx) => (
-            <div key={t.topic} style={{ background: CARD2, border: `1px solid ${t.plaudIn ? ACCENT + "44" : BORDER}`, borderRadius: 10, padding: "12px 14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                <span style={{ color: TEXT, fontSize: 12, fontWeight: 600, lineHeight: 1.3 }}>{t.topic}</span>
-                <button onClick={() => { const u = [...topics]; u[idx] = { ...u[idx], plaudIn: !u[idx].plaudIn }; setTopics(u); }}
-                  style={{ color: t.plaudIn ? GREEN : "#f43f5e", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", marginLeft: 6, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                  {t.plaudIn ? "✓ IN" : "✗ OUT"}
-                </button>
+        <div style={{color:TEXT,fontWeight:700,fontSize:13,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:16}}>AI Industry Narrative Landscape</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+          {topics.map((t,idx)=>(
+            <div key={t.topic} style={{background:CARD2,border:`1px solid ${t.plaudIn?ACCENT+"44":BORDER}`,borderRadius:10,padding:"12px 14px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                <span style={{color:TEXT,fontSize:12,fontWeight:600}}>{t.topic}</span>
+                <button onClick={()=>{const u=[...topics];u[idx]={...u[idx],plaudIn:!u[idx].plaudIn};setTopics(u);}} style={{color:t.plaudIn?GREEN:"#f43f5e",fontSize:10,fontWeight:700,background:"none",border:"none",cursor:"pointer"}}>{t.plaudIn?"✓ IN":"✗ OUT"}</button>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                <div style={{ flex: 1, background: BORDER, borderRadius: 4, height: 4 }}>
-                  <div style={{ width: `${t.relevance}%`, background: t.plaudIn ? ACCENT : MUTED, borderRadius: 4, height: 4 }} />
-                </div>
-                <span style={{ color: MUTED, fontSize: 10 }}>{t.relevance}</span>
-              </div>
-              {t.plaudIn ? (
-                <input placeholder="Add evidence..." defaultValue={t.evidence}
-                  onBlur={e => { const u = [...topics]; u[idx] = { ...u[idx], evidence: e.target.value }; setTopics(u); }}
-                  style={{ width: "100%", background: CARD, border: "none", borderRadius: 4, padding: "4px 6px", color: TEXT, fontSize: 10, outline: "none" }} />
-              ) : (
-                <div style={{ color: "#f59e0b", fontSize: 10 }}>⚡ Pitch opportunity</div>
-              )}
+              <div style={{background:BORDER,height:4,borderRadius:4}}><div style={{width:`${t.relevance}%`,background:t.plaudIn?ACCENT:MUTED,height:4,borderRadius:4}}/></div>
             </div>
           ))}
         </div>
