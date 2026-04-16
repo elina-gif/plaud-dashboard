@@ -1320,10 +1320,258 @@ function BrandAwarenessModule({ keywordData,pageData,uploadedAt,onLoad,trendsDat
   );
 }
 
+// ─── Content Agent ───────────────────────────────────────────
+const CONTENT_TYPES = [
+  { value: "thought_leadership", label: "Thought Leadership",   icon: "💡" },
+  { value: "product_story",      label: "Product Story",        icon: "📖" },
+  { value: "use_case",           label: "Use Case",             icon: "🎯" },
+  { value: "industry_commentary",label: "Industry Commentary",  icon: "📰" },
+  { value: "engagement",         label: "Engagement",           icon: "💬" },
+  { value: "campaign",           label: "Brand Campaign",       icon: "🚀" },
+];
+
+const NARRATIVE_COLORS: Record<string, string> = {
+  "AI Work Companion":           "#8F53ED",
+  "Conversation Intelligence":   "#00D0FF",
+  "Capture→Extract→Utilize":    "#21EF6A",
+  "Amplify Human Intelligence":  "#21EF6A",
+  "Future of Work":              "#f59e0b",
+};
+
+function ContentAgentModule() {
+  const [platform,    setPlatform]    = useState<"x"|"linkedin">("linkedin");
+  const [contentType, setContentType] = useState("thought_leadership");
+  const [topic,       setTopic]       = useState("");
+  const [angle,       setAngle]       = useState("");
+  const [loading,     setLoading]     = useState(false);
+  const [posts,       setPosts]       = useState<any[]>([]);
+  const [error,       setError]       = useState("");
+  const [copied,      setCopied]      = useState<number|null>(null);
+
+  const generate = async () => {
+    setLoading(true); setError(""); setPosts([]);
+    try {
+      const res = await fetch("/api/content-agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform, contentType, topic, angle }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); }
+      else { setPosts(data.posts || []); }
+    } catch (e: any) {
+      setError(e.message || "Failed to generate content");
+    }
+    setLoading(false);
+  };
+
+  const copyPost = (idx: number, text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(idx);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  const charLimit = platform === "x" ? 280 : 3000;
+  const charWarn  = platform === "x" ? 260 : 2000;
+
+  return (
+    <div style={{ display: "grid", gap: 20 }}>
+
+      {/* Header */}
+      <div style={{ padding: "20px 24px", background: `linear-gradient(135deg, ${ACCENT}12, #00D0FF10, #21EF6A0A)`, border: `1px solid ${ACCENT}30`, borderRadius: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+          <div style={{ background: GRAD, borderRadius: 10, width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>✍️</div>
+          <div>
+            <div style={{ color: TEXT, fontWeight: 800, fontSize: 16 }}>Content Agent</div>
+            <div style={{ color: MUTED, fontSize: 12 }}>Generate on-brand X & LinkedIn posts aligned with Plaud's 2026 narrative strategy</div>
+          </div>
+        </div>
+        {/* Narrative goals reminder */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+          {[
+            { label: "AI Work Companion", color: ACCENT, pct: "38→70%" },
+            { label: "Conv. Intelligence", color: BLUE,  pct: "29→65%" },
+            { label: "Capture→Extract→Utilize", color: GREEN, pct: "18→60%" },
+          ].map(n => (
+            <div key={n.label} style={{ background: n.color + "15", border: `1px solid ${n.color}40`, borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 600, color: n.color === GREEN ? "#1a7a3a" : n.color }}>
+              ↑ {n.label} <span style={{ opacity: 0.7 }}>{n.pct}</span>
+            </div>
+          ))}
+          <div style={{ background: "#f43f5e15", border: "1px solid #f43f5e40", borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 600, color: "#f43f5e" }}>
+            ↓ Avoid "AI Note Taker" 62→40%
+          </div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <Card>
+        <CardTitle>Configure Your Post</CardTitle>
+        <div style={{ display: "grid", gap: 18 }}>
+
+          {/* Platform toggle */}
+          <div>
+            <div style={{ color: MUTED, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Platform</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              {[
+                { val: "linkedin" as const, label: "LinkedIn", icon: "💼", limit: "900–1800 chars" },
+                { val: "x"        as const, label: "X (Twitter)", icon: "𝕏", limit: "≤280 chars" },
+              ].map(p => (
+                <button key={p.val} onClick={() => setPlatform(p.val)}
+                  style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: `2px solid ${platform === p.val ? ACCENT : BORDER}`, background: platform === p.val ? ACCENT + "12" : CARD2, cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+                  <div style={{ fontSize: 18, marginBottom: 4 }}>{p.icon}</div>
+                  <div style={{ color: platform === p.val ? ACCENT : TEXT, fontWeight: 700, fontSize: 13 }}>{p.label}</div>
+                  <div style={{ color: MUTED, fontSize: 11 }}>{p.limit}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Content type */}
+          <div>
+            <div style={{ color: MUTED, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Content Type</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {CONTENT_TYPES.map(ct => (
+                <button key={ct.value} onClick={() => setContentType(ct.value)}
+                  style={{ padding: "10px 12px", borderRadius: 8, border: `2px solid ${contentType === ct.value ? ACCENT : BORDER}`, background: contentType === ct.value ? ACCENT + "10" : CARD2, cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>{ct.icon}</div>
+                  <div style={{ color: contentType === ct.value ? ACCENT : TEXT, fontWeight: 600, fontSize: 11 }}>{ct.label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Topic input */}
+          <div>
+            <div style={{ color: MUTED, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Topic or Hook <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — leave blank to let AI choose)</span></div>
+            <input
+              value={topic}
+              onChange={e => setTopic(e.target.value)}
+              placeholder="e.g. 'Most important context from a meeting gets lost within 24 hours' or 'post-interview debrief'"
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${BORDER}`, background: CARD2, color: TEXT, fontSize: 13, outline: "none", fontFamily: "inherit" }}
+            />
+          </div>
+
+          {/* Angle input */}
+          <div>
+            <div style={{ color: MUTED, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Specific Angle <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></div>
+            <input
+              value={angle}
+              onChange={e => setAngle(e.target.value)}
+              placeholder="e.g. 'for executives', 'tie to the rise of async work', 'skeptical reader who hates AI hype'"
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${BORDER}`, background: CARD2, color: TEXT, fontSize: 13, outline: "none", fontFamily: "inherit" }}
+            />
+          </div>
+
+          <GradButton onClick={generate} loading={loading} loadingText="Generating 3 posts...">
+            Generate 3 Post Options →
+          </GradButton>
+        </div>
+      </Card>
+
+      {/* Error */}
+      {error && (
+        <div style={{ padding: "14px 18px", background: "#f43f5e10", border: "1px solid #f43f5e40", borderRadius: 10, color: "#f43f5e", fontSize: 13 }}>
+          Error: {error}
+        </div>
+      )}
+
+      {/* Results */}
+      {posts.length > 0 && (
+        <div>
+          <div style={{ color: TEXT, fontWeight: 700, fontSize: 13, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 14 }}>
+            Generated Posts — {platform === "x" ? "𝕏 X (Twitter)" : "💼 LinkedIn"} · {CONTENT_TYPES.find(c => c.value === contentType)?.label}
+          </div>
+          <div style={{ display: "grid", gap: 16 }}>
+            {posts.map((post, idx) => {
+              const chars    = post.charCount || (post.text || "").length;
+              const overLimit = chars > charLimit;
+              const nearLimit = chars > charWarn && !overLimit;
+              const charColor = overLimit ? "#f43f5e" : nearLimit ? "#f59e0b" : GREEN;
+              const narrativeColor = Object.entries(NARRATIVE_COLORS).find(([k]) =>
+                (post.narrative || "").toLowerCase().includes(k.toLowerCase())
+              )?.[1] || ACCENT;
+
+              return (
+                <Card key={idx} style={{ borderLeft: `3px solid ${narrativeColor}` }}>
+                  {/* Post header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <div style={{ background: CARD2, border: `1px solid ${BORDER}`, borderRadius: 16, padding: "3px 10px", color: TEXT, fontSize: 12, fontWeight: 700 }}>
+                        Option {idx + 1}
+                      </div>
+                      {post.narrative && (
+                        <div style={{ background: narrativeColor + "15", border: `1px solid ${narrativeColor}40`, borderRadius: 16, padding: "3px 10px", color: narrativeColor === GREEN ? "#1a7a3a" : narrativeColor, fontSize: 11, fontWeight: 600 }}>
+                          {post.narrative}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ color: charColor, fontSize: 12, fontWeight: 700 }}>
+                        {chars}{platform === "x" ? "/280" : " chars"}
+                        {overLimit && " ⚠️"}
+                      </div>
+                      <button
+                        onClick={() => copyPost(idx, post.text)}
+                        style={{ background: copied === idx ? GREEN + "20" : CARD2, border: `1px solid ${copied === idx ? GREEN : BORDER}`, borderRadius: 7, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: copied === idx ? "#1a7a3a" : TEXT, transition: "all 0.2s" }}>
+                        {copied === idx ? "✓ Copied!" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Hook description */}
+                  {post.hook && (
+                    <div style={{ color: MUTED, fontSize: 11, fontStyle: "italic", marginBottom: 10, padding: "6px 10px", background: CARD2, borderRadius: 6 }}>
+                      Hook: {post.hook}
+                    </div>
+                  )}
+
+                  {/* Post text */}
+                  <div style={{ background: CARD2, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "14px 16px", color: TEXT, fontSize: 13, lineHeight: 1.7, whiteSpace: "pre-wrap", fontFamily: "inherit", minHeight: 80 }}>
+                    {post.text}
+                  </div>
+
+                  {/* Hashtags */}
+                  {post.hashtags && post.hashtags.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+                      {post.hashtags.map((tag: string) => (
+                        <span key={tag} style={{ background: ACCENT + "12", border: `1px solid ${ACCENT}30`, borderRadius: 12, padding: "2px 10px", color: ACCENT, fontSize: 11, fontWeight: 600 }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Tip */}
+          <div style={{ marginTop: 14, padding: "12px 16px", background: BLUE + "10", border: `1px solid ${BLUE}30`, borderRadius: 10, fontSize: 11, color: MUTED, lineHeight: 1.7 }}>
+            <span style={{ color: BLUE, fontWeight: 700 }}>Tip: </span>
+            Use the post that best pushes <strong style={{ color: ACCENT }}>AI Work Companion</strong> or <strong style={{ color: GREEN }}>Capture→Extract→Utilize</strong> — these are the narratives furthest from target in 2026.
+            {platform === "x" && " For X threads, copy Option 1 as the hook tweet and regenerate to build out the thread."}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && posts.length === 0 && !error && (
+        <div style={{ textAlign: "center", padding: "48px 0", color: MUTED }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>✍️</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 6 }}>Ready to generate brand-aligned content</div>
+          <div style={{ fontSize: 12 }}>Select your platform, content type, and optional topic above — then hit Generate.</div>
+          <div style={{ fontSize: 11, marginTop: 8, opacity: 0.7 }}>Every post is calibrated to push Plaud's 2026 narrative targets.</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── 主组件 ──────────────────────────────────────────────────
 export default function Dashboard({ initialInsights,initialCoverage,initialMetrics,generatedAt,weekNumber }: DashboardProps) {
   const [tab,setTab] = useState(0);
-  const tabs = ["📊 Pulse","🧭 Narrative","⚔️ Competitive","🎯 Action","🧠 AI Insights","📰 Tier 1 Coverage","📈 Brand Awareness"];
+  const tabs = ["📊 Pulse","🧭 Narrative","⚔️ Competitive","🎯 Action","🧠 AI Insights","📰 Tier 1 Coverage","📈 Brand Awareness","✍️ Content Agent"];
 
   const [regionData, setRegionData] = useState<Record<string,{rows:any[];date:string|null}>>({
     us:{rows:[],date:null}, eu:{rows:[],date:null}, jp:{rows:[],date:null}, apac:{rows:[],date:null},
@@ -1458,6 +1706,7 @@ export default function Dashboard({ initialInsights,initialCoverage,initialMetri
               trendsData={trendsData} trendsKeywords={trendsKeywords} trendsUploadedAt={trendsUploadedAt} onTrendsLoad={handleTrendsLoad}
             />
           )}
+          {tab===7&&<ContentAgentModule/>}
         </>}
       </div>
     </div>
