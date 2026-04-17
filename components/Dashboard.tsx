@@ -1320,10 +1320,289 @@ function BrandAwarenessModule({ keywordData,pageData,uploadedAt,onLoad,trendsDat
   );
 }
 
+// ─── Social Content Agent ────────────────────────────────────
+const PLATFORMS = [
+  { id: "twitter",   label: "𝕏 Twitter",  limit: 280,  icon: "𝕏" },
+  { id: "linkedin",  label: "LinkedIn",   limit: 3000, icon: "in" },
+  { id: "instagram", label: "Instagram",  limit: 2200, icon: "▣" },
+  { id: "threads",   label: "Threads",    limit: 500,  icon: "◎" },
+];
+const CONTENT_TYPES = [
+  { id: "product_feature",   label: "Product Feature"    },
+  { id: "thought_leadership", label: "Thought Leadership" },
+  { id: "engagement",        label: "Engagement"         },
+  { id: "campaign",          label: "Campaign"           },
+  { id: "use_case",          label: "Use Case"           },
+];
+const TONES = [
+  { id: "professional",  label: "Professional"  },
+  { id: "casual",        label: "Casual"        },
+  { id: "inspirational", label: "Inspirational" },
+  { id: "educational",   label: "Educational"   },
+];
+
+function SocialContentAgent() {
+  const [platform,    setPlatform]    = useState("linkedin");
+  const [contentType, setContentType] = useState("product_feature");
+  const [tone,        setTone]        = useState("professional");
+  const [topic,       setTopic]       = useState("");
+  const [context,     setContext]     = useState("");
+  const [loading,     setLoading]     = useState(false);
+  const [results,     setResults]     = useState<any>(null);
+  const [error,       setError]       = useState<string|null>(null);
+  const [copied,      setCopied]      = useState<number|null>(null);
+  const [savedPosts,  setSavedPosts]  = useState<any[]>([]);
+  const [activeView,  setActiveView]  = useState<"generate"|"saved">("generate");
+
+  const currentPlatform = PLATFORMS.find(p => p.id === platform)!;
+
+  const generate = async () => {
+    if (!topic.trim()) { setError("Please enter a topic or brief."); return; }
+    setLoading(true); setError(null); setResults(null);
+    try {
+      const res = await fetch("/api/social-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform, contentType, tone, topic, context, variationCount: 3 }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResults(data);
+    } catch (e: any) {
+      setError(e.message || "Generation failed. Please try again.");
+    }
+    setLoading(false);
+  };
+
+  const copyToClipboard = async (text: string, idx: number) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(idx);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const savePost = (variation: any) => {
+    const post = {
+      ...variation,
+      platform,
+      contentType,
+      tone,
+      topic,
+      savedAt: new Date().toLocaleString(),
+      id: Date.now(),
+    };
+    setSavedPosts(prev => [post, ...prev]);
+  };
+
+  const deletePost = (id: number) => setSavedPosts(prev => prev.filter(p => p.id !== id));
+
+  const charPercent = (count: number) => Math.min(100, Math.round((count / currentPlatform.limit) * 100));
+  const charColor = (count: number) => {
+    const pct = charPercent(count);
+    if (pct > 90) return "#f43f5e";
+    if (pct > 70) return "#f59e0b";
+    return GREEN;
+  };
+
+  const pilledBtn = (active: boolean, onClick: () => void, children: React.ReactNode, color = ACCENT) => (
+    <button onClick={onClick} style={{
+      background: active ? color + "18" : CARD2,
+      border: `1px solid ${active ? color + "66" : BORDER}`,
+      borderRadius: 20, padding: "5px 14px", fontSize: 11, fontWeight: active ? 700 : 500,
+      color: active ? color : MUTED, cursor: "pointer", whiteSpace: "nowrap" as const, transition: "all 0.15s",
+    }}>{children}</button>
+  );
+
+  return (
+    <div style={{ display: "grid", gap: 20 }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <div style={{ color: TEXT, fontWeight: 800, fontSize: 20, marginBottom: 4 }}>Social Content Agent</div>
+          <div style={{ color: MUTED, fontSize: 12 }}>AI-powered content generator tuned to Plaud's brand voice and narrative strategy</div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {pilledBtn(activeView === "generate", () => setActiveView("generate"), "✍️ Generate", ACCENT)}
+          {pilledBtn(activeView === "saved", () => setActiveView("saved"), `📋 Saved (${savedPosts.length})`, BLUE)}
+        </div>
+      </div>
+
+      {activeView === "saved" && (
+        <div style={{ display: "grid", gap: 12 }}>
+          {savedPosts.length === 0 && (
+            <Card><div style={{ color: MUTED, fontSize: 12, textAlign: "center", padding: "32px 0" }}>No saved posts yet. Generate content and click Save to keep it here.</div></Card>
+          )}
+          {savedPosts.map(post => (
+            <Card key={post.id}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                  <span style={{ background: ACCENT + "18", border: `1px solid ${ACCENT}44`, borderRadius: 20, padding: "3px 10px", color: ACCENT, fontSize: 11, fontWeight: 700 }}>{post.platform}</span>
+                  <span style={{ background: BLUE + "18", border: `1px solid ${BLUE}44`, borderRadius: 20, padding: "3px 10px", color: BLUE, fontSize: 11 }}>{post.contentType?.replace("_", " ")}</span>
+                  <span style={{ background: GREEN + "18", border: `1px solid ${GREEN}44`, borderRadius: 20, padding: "3px 10px", color: "#1a7a3a", fontSize: 11 }}>{post.tone}</span>
+                  <span style={{ color: MUTED, fontSize: 11, alignSelf: "center" }}>{post.savedAt}</span>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => copyToClipboard(post.content, post.id)} style={{ background: CARD2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, color: copied === post.id ? GREEN : MUTED, cursor: "pointer", fontWeight: 600 }}>
+                    {copied === post.id ? "✓ Copied" : "Copy"}
+                  </button>
+                  <button onClick={() => deletePost(post.id)} style={{ background: "#f43f5e18", border: "1px solid #f43f5e44", borderRadius: 8, padding: "5px 12px", fontSize: 11, color: "#f43f5e", cursor: "pointer", fontWeight: 600 }}>Delete</button>
+                </div>
+              </div>
+              <div style={{ color: MUTED, fontSize: 10, marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Topic: {post.topic}</div>
+              <div style={{ background: CARD2, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "12px 14px", color: TEXT, fontSize: 13, lineHeight: 1.7, whiteSpace: "pre-wrap" as const }}>{post.content}</div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {activeView === "generate" && (<>
+        {/* Controls */}
+        <Card>
+          <div style={{ display: "grid", gap: 16 }}>
+            {/* Platform */}
+            <div>
+              <div style={{ color: MUTED, fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>Platform</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                {PLATFORMS.map(p => pilledBtn(platform === p.id, () => setPlatform(p.id), `${p.icon} ${p.label}`))}
+              </div>
+            </div>
+            {/* Content Type */}
+            <div>
+              <div style={{ color: MUTED, fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>Content Type</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                {CONTENT_TYPES.map(ct => pilledBtn(contentType === ct.id, () => setContentType(ct.id), ct.label, BLUE))}
+              </div>
+            </div>
+            {/* Tone */}
+            <div>
+              <div style={{ color: MUTED, fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>Tone</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                {TONES.map(t => pilledBtn(tone === t.id, () => setTone(t.id), t.label, GREEN))}
+              </div>
+            </div>
+            {/* Topic */}
+            <div>
+              <div style={{ color: MUTED, fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6 }}>Topic / Brief <span style={{ color: "#f43f5e" }}>*</span></div>
+              <input
+                value={topic} onChange={e => setTopic(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !e.shiftKey && generate()}
+                placeholder="e.g. NotePin S records in-person meetings without a phone, new battery life improvement, why meetings are where ideas die..."
+                style={{ width: "100%", background: CARD2, border: `1px solid ${error && !topic.trim() ? "#f43f5e" : BORDER}`, borderRadius: 10, padding: "10px 14px", color: TEXT, fontSize: 13, fontFamily: "inherit", outline: "none" }}
+              />
+            </div>
+            {/* Context */}
+            <div>
+              <div style={{ color: MUTED, fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6 }}>Additional Context <span style={{ color: MUTED }}>(optional)</span></div>
+              <textarea
+                value={context} onChange={e => setContext(e.target.value)}
+                rows={2}
+                placeholder="Target audience, campaign goal, specific product details, links to reference, seasonal angle..."
+                style={{ width: "100%", background: CARD2, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 14px", color: TEXT, fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" as const }}
+              />
+            </div>
+            {error && <div style={{ color: "#f43f5e", fontSize: 12 }}>{error}</div>}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ color: MUTED, fontSize: 11 }}>Generates 3 unique variations · Char limit: {currentPlatform.limit.toLocaleString()}</div>
+              <GradButton onClick={generate} loading={loading} loadingText="Generating...">Generate Content ✦</GradButton>
+            </div>
+          </div>
+        </Card>
+
+        {/* Results */}
+        {loading && (
+          <Card>
+            <div style={{ display: "flex", flexDirection: "column" as const, alignItems: "center", padding: "40px 0", gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", border: `3px solid ${ACCENT}22`, borderTop: `3px solid ${ACCENT}`, animation: "spin 1s linear infinite" }} />
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <div style={{ color: MUTED, fontSize: 13 }}>Crafting content tuned to Plaud's brand voice...</div>
+            </div>
+          </Card>
+        )}
+
+        {results && results.variations && (
+          <div style={{ display: "grid", gap: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ color: TEXT, fontWeight: 700, fontSize: 13 }}>Generated Variations</div>
+                <div style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>{currentPlatform.label} · {contentType.replace("_", " ")} · {tone}</div>
+              </div>
+              <GradButton onClick={generate} loading={loading} loadingText="Regenerating...">Regenerate ↻</GradButton>
+            </div>
+
+            {results.variations.map((v: any, i: number) => (
+              <Card key={i}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <div style={{ background: GRAD, width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 800 }}>{i + 1}</div>
+                    <div style={{ color: MUTED, fontSize: 11 }}>Variation {i + 1} {v.angle ? `· ${v.angle}` : ""}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {/* Char count bar */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 60, height: 4, background: BORDER, borderRadius: 2, overflow: "hidden" }}>
+                        <div style={{ width: `${charPercent(v.charCount || v.content?.length || 0)}%`, height: "100%", background: charColor(v.charCount || v.content?.length || 0), borderRadius: 2, transition: "width 0.3s" }} />
+                      </div>
+                      <span style={{ color: charColor(v.charCount || v.content?.length || 0), fontSize: 11, fontWeight: 600 }}>{v.charCount || v.content?.length || 0}</span>
+                    </div>
+                    <button onClick={() => savePost(v)} style={{ background: CARD2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, color: MUTED, cursor: "pointer", fontWeight: 600 }}>Save</button>
+                    <button onClick={() => copyToClipboard(v.content, i)} style={{ background: copied === i ? GREEN + "18" : CARD2, border: `1px solid ${copied === i ? GREEN + "66" : BORDER}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, color: copied === i ? "#1a7a3a" : MUTED, cursor: "pointer", fontWeight: 600, transition: "all 0.15s" }}>
+                      {copied === i ? "✓ Copied!" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div style={{ background: CARD2, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "14px 16px", color: TEXT, fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap" as const, marginBottom: 10 }}>
+                  {v.content}
+                </div>
+
+                {/* Hashtags */}
+                {v.hashtags && v.hashtags.length > 0 && (
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
+                    {v.hashtags.map((tag: string, ti: number) => (
+                      <span key={ti} style={{ background: ACCENT + "12", border: `1px solid ${ACCENT}33`, borderRadius: 12, padding: "2px 10px", color: ACCENT, fontSize: 11, fontWeight: 600 }}>#{tag.replace(/^#/, "")}</span>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            ))}
+
+            {/* Platform tips */}
+            <Card style={{ background: BLUE + "08", border: `1px solid ${BLUE}33` }}>
+              <div style={{ color: BLUE, fontWeight: 700, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>Platform Tips — {currentPlatform.label}</div>
+              <div style={{ display: "grid", gap: 4 }}>
+                {platform === "twitter" && [
+                  "Post between 8–10am or 6–9pm on weekdays for highest engagement",
+                  "Threads of 3–5 tweets outperform single posts for thought leadership",
+                  "Reply to trending tech conversations within 30 mins for visibility boost",
+                ].map((tip, i) => <div key={i} style={{ color: MUTED, fontSize: 11 }}>→ {tip}</div>)}
+                {platform === "linkedin" && [
+                  "Tuesday–Thursday 7–9am drives highest professional reach",
+                  "Posts with an image or custom graphic get 2x impressions",
+                  "The first 3 lines determine click-to-expand rate — make them irresistible",
+                ].map((tip, i) => <div key={i} style={{ color: MUTED, fontSize: 11 }}>→ {tip}</div>)}
+                {platform === "instagram" && [
+                  "Carousel posts (multi-slide) average 3x more reach than single images",
+                  "Store hashtags in a note — keep captions clean, add tags as first comment",
+                  "Reels with trending audio in the first 72 hours maximize algorithm boost",
+                ].map((tip, i) => <div key={i} style={{ color: MUTED, fontSize: 11 }}>→ {tip}</div>)}
+                {platform === "threads" && [
+                  "Threads rewards consistency — post daily even if short",
+                  "Reply chains and conversations drive follower growth faster than pure posts",
+                  "Keep it conversational — Threads penalizes overly polished brand copy",
+                ].map((tip, i) => <div key={i} style={{ color: MUTED, fontSize: 11 }}>→ {tip}</div>)}
+              </div>
+            </Card>
+          </div>
+        )}
+      </>)}
+    </div>
+  );
+}
+
 // ─── 主组件 ──────────────────────────────────────────────────
 export default function Dashboard({ initialInsights,initialCoverage,initialMetrics,generatedAt,weekNumber }: DashboardProps) {
   const [tab,setTab] = useState(0);
-  const tabs = ["📊 Pulse","🧭 Narrative","⚔️ Competitive","🎯 Action","🧠 AI Insights","📰 Tier 1 Coverage","📈 Brand Awareness"];
+  const tabs = ["📊 Pulse","🧭 Narrative","⚔️ Competitive","🎯 Action","🧠 AI Insights","📰 Tier 1 Coverage","📈 Brand Awareness","✍️ Social Content"];
 
   const [regionData, setRegionData] = useState<Record<string,{rows:any[];date:string|null}>>({
     us:{rows:[],date:null}, eu:{rows:[],date:null}, jp:{rows:[],date:null}, apac:{rows:[],date:null},
@@ -1458,6 +1737,7 @@ export default function Dashboard({ initialInsights,initialCoverage,initialMetri
               trendsData={trendsData} trendsKeywords={trendsKeywords} trendsUploadedAt={trendsUploadedAt} onTrendsLoad={handleTrendsLoad}
             />
           )}
+          {tab===7&&<SocialContentAgent/>}
         </>}
       </div>
     </div>
